@@ -21,7 +21,8 @@ export class AiError extends Error {
   }
 }
 
-const TIMEOUT_MS = 100_000;
+// ต่อหนึ่งครั้งที่เรียก (มี 2 ครั้ง: รุ่นหลัก แล้วรุ่นสำรอง) ให้รวมไม่เกินเวลาของฟังก์ชัน (120 วินาที)
+const TIMEOUT_MS = 50_000;
 
 function parseJson(text: string): unknown {
   const t = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/```$/, "").trim();
@@ -42,7 +43,8 @@ function parseJson(text: string): unknown {
 }
 
 /** รุ่นสำรอง ใช้เมื่อรุ่นหลักยุ่งหรือเรียกไม่ได้ชั่วคราว */
-const FALLBACK_MODEL = "gemini-3.6-flash";
+const STABLE_MODEL = "gemini-3.6-flash";
+const NEWEST_MODEL = "gemini-3.8-flash";
 
 async function callModel(ai: GoogleGenAI, model: string, prompt: string, schema?: object) {
   const res = await ai.models.generateContent({
@@ -68,8 +70,9 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 export async function generateJson(prompt: string, schema?: object): Promise<unknown> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new AiError("no_key");
-  const primary = process.env.GEMINI_MODEL || "gemini-3.8-flash";
-  const models = primary === FALLBACK_MODEL ? [primary, primary] : [primary, primary, FALLBACK_MODEL];
+  // รุ่นเสถียรเป็นรุ่นหลัก รุ่นใหม่สุดเป็นสำรอง (รุ่นใหม่สุดมักยุ่งหรือตอบช้า)
+  const primary = process.env.GEMINI_MODEL || STABLE_MODEL;
+  const models = [primary, primary === STABLE_MODEL ? NEWEST_MODEL : STABLE_MODEL];
   const ai = new GoogleGenAI({ apiKey, httpOptions: { timeout: TIMEOUT_MS } });
 
   let last: AiError = new AiError("unknown");
@@ -88,7 +91,7 @@ export async function generateJson(prompt: string, schema?: object): Promise<unk
       last = new AiError(status === 429 ? "rate" : status === 503 ? "busy" : timedOut ? "timeout" : "unknown");
       // ลองใหม่เฉพาะกรณีที่ปลายทางยุ่งหรือเรียกไม่ติดชั่วคราว
       if (!(status === 503 || status === 429 || status === 500 || status === 404 || timedOut)) throw last;
-      if (i < models.length - 1) await sleep(1500);
+      if (i < models.length - 1) await sleep(500);
     }
   }
   throw last;
