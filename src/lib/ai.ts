@@ -1,13 +1,14 @@
 import "server-only";
 import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 
-export type AiErrorCode = "no_key" | "bad_key" | "rate" | "blocked" | "timeout" | "empty" | "unknown";
+export type AiErrorCode = "no_key" | "bad_key" | "rate" | "busy" | "blocked" | "timeout" | "empty" | "unknown";
 
 /** ข้อความภาษาไทยที่แสดงให้ผู้ใช้เห็น (ห้ามโชว์ error ดิบ) */
 export const AI_ERROR_TEXT: Record<AiErrorCode, string> = {
   no_key: "ยังไม่ได้ตั้งค่า AI ในระบบ แจ้งผู้ดูแลระบบให้ใส่คีย์ Gemini ก่อน",
   bad_key: "คีย์ AI ใช้ไม่ได้ แจ้งผู้ดูแลระบบให้ตรวจคีย์ Gemini",
   rate: "AI ถูกเรียกใช้บ่อยเกินไปในตอนนี้ รอสักครู่แล้วลองใหม่",
+  busy: "AI กำลังมีผู้ใช้งานจำนวนมาก ลองกดอีกครั้งในอีกสักครู่",
   blocked: "AI ปฏิเสธที่จะตอบเนื้อหานี้ ลองปรับความต้องการเพิ่มเติมแล้วลองใหม่",
   timeout: "AI ใช้เวลานานเกินไป ลองกดอีกครั้ง",
   empty: "AI ตอบกลับมาแต่ไม่มีข้อมูลที่ใช้ได้ ลองกดอีกครั้งหรือปรับความต้องการเพิ่มเติม",
@@ -40,40 +41,55 @@ function parseJson(text: string): unknown {
   }
 }
 
-/** เรียก Gemini ให้ตอบเป็น JSON (ถ้ามี schema จะบังคับรูปแบบ) */
+/** รุ่นสำรอง ใช้เมื่อรุ่นหลักยุ่งหรือเรียกไม่ได้ชั่วคราว */
+const FALLBACK_MODEL = "gemini-3.6-flash";
+
+async function callModel(ai: GoogleGenAI, model: string, prompt: string, schema?: object) {
+  const res = await ai.models.generateContent({
+    model,
+    contents: prompt,
+    config: {
+      responseMimeType: "application/json",
+      // คิดน้อยลงเพื่อให้ตอบเร็ว (งานร่างแผนไม่ต้องใช้การให้เหตุผลลึก)
+      thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+      ...(schema ? { responseJsonSchema: schema } : {}),
+    },
+  });
+  if (res.promptFeedback?.blockReason) throw new AiError("blocked");
+  const finish = res.candidates?.[0]?.finishReason;
+  const text = res.text;
+  if (!text) throw new AiError(finish === "SAFETY" || finish === "PROHIBITED_CONTENT" ? "blocked" : "empty");
+  return parseJson(text);
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** เรียก Gemini ให้ตอบเป็น JSON (ถ้ามี schema จะบังคับรูปแบบ) ลองใหม่และสลับไปรุ่นสำรองเมื่อยุ่ง */
 export async function generateJson(prompt: string, schema?: object): Promise<unknown> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new AiError("no_key");
-  const model = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+  const primary = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+  const models = primary === FALLBACK_MODEL ? [primary, primary] : [primary, primary, FALLBACK_MODEL];
   const ai = new GoogleGenAI({ apiKey, httpOptions: { timeout: TIMEOUT_MS } });
 
-  try {
-    const res = await ai.models.generateContent({
-      model,
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        // คิดน้อยลงเพื่อให้ตอบเร็ว (งานร่างแผนไม่ต้องใช้การให้เหตุผลลึก)
-        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
-        ...(schema ? { responseJsonSchema: schema } : {}),
-      },
-    });
-    if (res.promptFeedback?.blockReason) throw new AiError("blocked");
-    const finish = res.candidates?.[0]?.finishReason;
-    const text = res.text;
-    if (!text) throw new AiError(finish === "SAFETY" || finish === "PROHIBITED_CONTENT" ? "blocked" : "empty");
-    return parseJson(text);
-  } catch (e) {
-    if (e instanceof AiError) throw e;
-    const status = (e as { status?: number }).status;
-    const msg = e instanceof Error ? e.message : "";
-    // บันทึกสาเหตุจริงไว้ใน log ฝั่งเซิร์ฟเวอร์ (ผู้ใช้เห็นเฉพาะข้อความไทย)
-    console.error("[ai] generateContent failed", { model, status, name: e instanceof Error ? e.name : typeof e, msg: msg.slice(0, 300) });
-    if (status === 429) throw new AiError("rate");
-    if (status === 401 || status === 403 || /API key/i.test(msg)) throw new AiError("bad_key");
-    if (status === 408 || status === 504 || (e instanceof Error && (e.name === "AbortError" || /timed? ?out/i.test(msg)))) {
-      throw new AiError("timeout");
+  let last: AiError = new AiError("unknown");
+  for (let i = 0; i < models.length; i++) {
+    const model = models[i];
+    try {
+      return await callModel(ai, model, prompt, schema);
+    } catch (e) {
+      if (e instanceof AiError) throw e;
+      const status = (e as { status?: number }).status;
+      const msg = e instanceof Error ? e.message : "";
+      // บันทึกสาเหตุจริงไว้ใน log ฝั่งเซิร์ฟเวอร์ (ผู้ใช้เห็นเฉพาะข้อความไทย)
+      console.error("[ai] generateContent failed", { model, status, name: e instanceof Error ? e.name : typeof e, msg: msg.slice(0, 300) });
+      if (status === 401 || status === 403 || /API key/i.test(msg)) throw new AiError("bad_key");
+      const timedOut = status === 408 || status === 504 || (e instanceof Error && (e.name === "AbortError" || /timed? ?out/i.test(msg)));
+      last = new AiError(status === 429 ? "rate" : status === 503 ? "busy" : timedOut ? "timeout" : "unknown");
+      // ลองใหม่เฉพาะกรณีที่ปลายทางยุ่งหรือเรียกไม่ติดชั่วคราว
+      if (!(status === 503 || status === 429 || status === 500 || status === 404 || timedOut)) throw last;
+      if (i < models.length - 1) await sleep(1500);
     }
-    throw new AiError("unknown");
   }
+  throw last;
 }
