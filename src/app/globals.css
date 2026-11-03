@@ -147,3 +147,16 @@
     @apply font-sans;
   }
 }
+
+@media print {
+  html {
+    font-size: 12px;
+  }
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  @page {
+    margin: 14mm;
+  }
+}
