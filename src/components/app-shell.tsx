@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { ClipboardCheck, FileText, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { BrandLogo } from "@/components/brand-logo";
 import { brand } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 import { logout } from "@/app/login/actions";
@@ -32,11 +33,8 @@ export function AppShell({
     <div className="flex min-h-full flex-1 flex-col">
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur print:hidden">
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-4 md:h-16 md:gap-6">
-          <Link href="/" className="flex items-center gap-2 font-semibold">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-sm text-primary-foreground">
-              {brand.symbol}
-            </span>
-            <span className="hidden sm:inline">{brand.shortName}</span>
+          <Link href="/" aria-label={`${brand.name} หน้าแรก`} className="flex shrink-0 items-center">
+            <BrandLogo height={30} priority />
           </Link>
           <nav className="flex gap-1" aria-label="เมนูหลัก">
             {items.map((item) => (

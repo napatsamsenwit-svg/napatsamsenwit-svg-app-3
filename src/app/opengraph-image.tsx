@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { ImageResponse } from "next/og";
 import { brand } from "@/lib/brand";
 import { ogFonts } from "@/lib/og-font";
@@ -7,6 +9,8 @@ export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 export default async function OpengraphImage() {
+  const logo = await readFile(join(process.cwd(), "public/logo.png"));
+  const src = `data:image/png;base64,${logo.toString("base64")}`;
   return new ImageResponse(
     (
       <div
@@ -15,30 +19,16 @@ export default async function OpengraphImage() {
           height: "100%",
           display: "flex",
           flexDirection: "column",
+          alignItems: "center",
           justifyContent: "center",
-          padding: 80,
-          background: brand.color,
-          color: "white",
+          background: "#F5F6FA",
+          color: "#1C244B",
           fontFamily: "Plex Thai",
         }}
       >
-        <div
-          style={{
-            width: 120,
-            height: 120,
-            borderRadius: 32,
-            background: "rgba(255,255,255,0.18)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 72,
-            marginBottom: 48,
-          }}
-        >
-          {brand.symbol}
-        </div>
-        <div style={{ fontSize: 84, lineHeight: 1.3 }}>{brand.name}</div>
-        <div style={{ fontSize: 40, lineHeight: 1.5, opacity: 0.85, marginTop: 16 }}>{brand.description}</div>
+        <img src={src} width={760} height={168} alt="" />
+        <div style={{ fontSize: 40, lineHeight: 1.5, marginTop: 40, opacity: 0.85 }}>วางแผนธุรกิจ 13 หัวข้อด้วย AI</div>
+        <div style={{ fontSize: 28, marginTop: 8, opacity: 0.6 }}>by CSR Consulting Group</div>
       </div>
     ),
     { ...size, fonts: await ogFonts() },
