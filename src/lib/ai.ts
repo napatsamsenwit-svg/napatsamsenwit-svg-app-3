@@ -1,5 +1,5 @@
 import "server-only";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 
 export type AiErrorCode = "no_key" | "bad_key" | "rate" | "blocked" | "timeout" | "empty" | "unknown";
 
@@ -20,7 +20,7 @@ export class AiError extends Error {
   }
 }
 
-const TIMEOUT_MS = 55_000;
+const TIMEOUT_MS = 100_000;
 
 function parseJson(text: string): unknown {
   const t = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/```$/, "").trim();
@@ -53,6 +53,8 @@ export async function generateJson(prompt: string, schema?: object): Promise<unk
       contents: prompt,
       config: {
         responseMimeType: "application/json",
+        // คิดน้อยลงเพื่อให้ตอบเร็ว (งานร่างแผนไม่ต้องใช้การให้เหตุผลลึก)
+        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
         ...(schema ? { responseJsonSchema: schema } : {}),
       },
     });
@@ -65,6 +67,8 @@ export async function generateJson(prompt: string, schema?: object): Promise<unk
     if (e instanceof AiError) throw e;
     const status = (e as { status?: number }).status;
     const msg = e instanceof Error ? e.message : "";
+    // บันทึกสาเหตุจริงไว้ใน log ฝั่งเซิร์ฟเวอร์ (ผู้ใช้เห็นเฉพาะข้อความไทย)
+    console.error("[ai] generateContent failed", { model, status, name: e instanceof Error ? e.name : typeof e, msg: msg.slice(0, 300) });
     if (status === 429) throw new AiError("rate");
     if (status === 401 || status === 403 || /API key/i.test(msg)) throw new AiError("bad_key");
     if (status === 408 || status === 504 || (e instanceof Error && (e.name === "AbortError" || /timed? ?out/i.test(msg)))) {
