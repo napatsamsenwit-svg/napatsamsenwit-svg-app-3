@@ -5,7 +5,7 @@
 export const brand = {
   name: "Anna AI",
   shortName: "Anna AI",
-  description: "กรอกพิมพ์เขียวธุรกิจ 13 หัวข้อ มี AI ช่วยร่าง และส่งให้ผู้ตรวจอนุมัติทีละหัวข้อ",
+  description: "ระบบ HR AI ครบวงจร ตั้งแต่วางแผนธุรกิจ โครงสร้างองค์กร ไปจนถึงประเมิน KPI และสมรรถนะ",
   color: "#1C244B",
   symbol: "A",
 };

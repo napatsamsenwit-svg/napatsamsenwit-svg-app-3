@@ -11,8 +11,12 @@ import { login, signup } from "./actions";
 
 const FEATURES = [
   { icon: Sparkles, title: "AI ช่วยร่างให้ทุกหัวข้อ", text: "บอกความต้องการสั้น ๆ แล้วได้ร่างพร้อมแก้ต่อ" },
-  { icon: ClipboardCheck, title: "ส่งตรวจและอนุมัติทีละหัวข้อ", text: "ผู้ตรวจให้ความเห็นหรืออนุมัติได้ในที่เดียว" },
-  { icon: FileText, title: "สรุปทั้งแผนเป็น PDF", text: "พิมพ์หรือบันทึกเป็นไฟล์ไปใช้งานต่อได้ทันที" },
+  {
+    icon: ClipboardCheck,
+    title: "ประเมิน KPI และสมรรถนะแบบ Real time",
+    text: "ประเมิน 90° 180° 360° เชื่อมเป้าหมายองค์กรสู่รายบุคคล",
+  },
+  { icon: FileText, title: "ลดเวลาประเมินจาก 4 เดือน เหลือ 4 วัน", text: "ส่งตรวจ อนุมัติ และออกรายงานได้ในระบบเดียว" },
 ];
 
 export default function LoginPage() {
@@ -38,9 +42,9 @@ export default function LoginPage() {
 
         <div className="relative max-w-lg space-y-8">
           <div className="space-y-3">
-            <h2 className="text-4xl leading-snug font-semibold">วางแผนธุรกิจ 13 หัวข้อ ให้เสร็จเร็วขึ้นด้วย AI</h2>
+            <h2 className="text-4xl leading-snug font-semibold">ระบบ HR AI ครบวงจร</h2>
             <p className="text-lg leading-relaxed opacity-80">
-              ตั้งแต่ข้อมูลบริษัทไปจนถึงแผนพัฒนารายบุคคล กรอกครั้งเดียว บันทึกอัตโนมัติ
+              ตั้งแต่วางแผนธุรกิจ โครงสร้างองค์กร ไปจนถึงประเมิน KPI และสมรรถนะ ลดงานเอกสาร ลดเวลา และได้ข้อมูลไปตัดสินใจจริง
             </p>
           </div>
           <ul className="space-y-4">
@@ -64,14 +68,14 @@ export default function LoginPage() {
       <section className="flex flex-col items-center justify-center gap-8 px-4 py-10 sm:px-6">
         <div className="flex flex-col items-center gap-2 text-center lg:hidden">
           <BrandLogo height={40} priority />
-          <p className="text-sm text-muted-foreground">วางแผนธุรกิจ 13 หัวข้อด้วย AI</p>
+          <p className="text-sm text-muted-foreground">ระบบ HR AI ครบวงจร</p>
         </div>
 
         <div className="w-full max-w-sm space-y-6">
           <div className="space-y-1">
-            <h1 className="text-2xl font-semibold">{isLogin ? "ยินดีต้อนรับกลับมา" : "สร้างบัญชีใหม่"}</h1>
+            <h1 className="text-2xl font-semibold">{isLogin ? "เข้าสู่ระบบ Anna-AI" : "ลงทะเบียนใช้งาน Anna-AI"}</h1>
             <p className="text-sm text-muted-foreground">
-              {isLogin ? "เข้าสู่ระบบเพื่อกรอกแผนธุรกิจของคุณต่อ" : "สมัครฟรี ใช้เวลาไม่ถึงหนึ่งนาที"}
+              {isLogin ? "เข้าใช้งานระบบ HR AI สำหรับองค์กรของคุณ" : "สร้างบัญชีผู้ใช้งานเพื่อเริ่มใช้ระบบ HR AI"}
             </p>
           </div>
 

@@ -27,7 +27,7 @@ export default async function OpengraphImage() {
         }}
       >
         <img src={src} width={760} height={168} alt="" />
-        <div style={{ fontSize: 40, lineHeight: 1.5, marginTop: 40, opacity: 0.85 }}>วางแผนธุรกิจ 13 หัวข้อด้วย AI</div>
+        <div style={{ fontSize: 40, lineHeight: 1.5, marginTop: 40, opacity: 0.85 }}>ระบบ HR AI ครบวงจร</div>
         <div style={{ fontSize: 28, marginTop: 8, opacity: 0.6 }}>by CSR Consulting Group</div>
       </div>
     ),
