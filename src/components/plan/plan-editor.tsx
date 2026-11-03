@@ -85,6 +85,14 @@ export function PlanEditor({
   const [navOpen, setNavOpen] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
 
+  // ผู้ตรวจดูอย่างเดียว: ซิงก์สถานะใหม่ทุกครั้งที่เซิร์ฟเวอร์ส่งข้อมูลมาให้ (หลังตัดสินแล้วรีเฟรช)
+  // ปรับ state ระหว่างเรนเดอร์ ตามวิธีที่ React แนะนำ แทนการเรียก setState ใน effect
+  const [syncedInitial, setSyncedInitial] = useState(initial);
+  if (readOnly && syncedInitial !== initial) {
+    setSyncedInitial(initial);
+    setSections(buildInitial(initial));
+  }
+
   const pending = useRef(new Set<string>());
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const latest = useRef(sections);

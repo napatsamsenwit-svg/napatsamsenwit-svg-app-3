@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { PlanEditor, type ReviewItem } from "@/components/plan/plan-editor";
 import { requireUser } from "@/lib/plan";
@@ -20,6 +20,8 @@ export default async function PlanPage({ params }: PageProps<"/plans/[id]">) {
       .order("created_at", { ascending: true }),
   ]);
   if (!plan.data) notFound();
+  // แผนของคนอื่น (ผู้ตรวจ) เปิดได้ที่หน้าตรวจเท่านั้น
+  if (plan.data.user_id !== userId) redirect(`/review/${id}`);
 
   const initial = Object.fromEntries((sections.data ?? []).map((s) => [s.section_key, { data: s.data, status: s.status }]));
   const byKey: Record<string, ReviewItem[]> = {};
@@ -29,13 +31,7 @@ export default async function PlanPage({ params }: PageProps<"/plans/[id]">) {
 
   return (
     <Suspense>
-      <PlanEditor
-        planId={plan.data.id}
-        title={plan.data.title}
-        mode={plan.data.user_id === userId ? "owner" : "reviewer"}
-        initial={initial}
-        reviews={byKey}
-      />
+      <PlanEditor planId={plan.data.id} title={plan.data.title} mode="owner" initial={initial} reviews={byKey} />
     </Suspense>
   );
 }
