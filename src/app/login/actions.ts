@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { isAllowedEmail, NOT_ALLOWED_MESSAGE } from "@/lib/allowed-emails";
 import { createClient } from "@/lib/supabase/server";
 
 export type AuthState = { error: string } | null;
@@ -13,14 +14,17 @@ function readCredentials(formData: FormData) {
 }
 
 export async function login(_prev: AuthState, formData: FormData): Promise<AuthState> {
+  const credentials = readCredentials(formData);
+  if (!isAllowedEmail(credentials.email)) return { error: NOT_ALLOWED_MESSAGE };
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword(readCredentials(formData));
+  const { error } = await supabase.auth.signInWithPassword(credentials);
   if (error) return { error: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" };
   redirect("/");
 }
 
 export async function signup(_prev: AuthState, formData: FormData): Promise<AuthState> {
   const credentials = readCredentials(formData);
+  if (!isAllowedEmail(credentials.email)) return { error: NOT_ALLOWED_MESSAGE };
   if (credentials.password.length < 6) return { error: "รหัสผ่านต้องยาวอย่างน้อย 6 ตัว" };
   if (credentials.password !== String(formData.get("confirmPassword") ?? "")) return { error: "รหัสผ่านทั้งสองช่องไม่ตรงกัน" };
 
@@ -28,6 +32,7 @@ export async function signup(_prev: AuthState, formData: FormData): Promise<Auth
   const { data, error } = await supabase.auth.signUp(credentials);
   if (error) {
     if (error.code === "user_already_exists") return { error: "อีเมลนี้สมัครไว้แล้ว ลองเข้าสู่ระบบแทน" };
+    if (error.message.includes("Database error")) return { error: NOT_ALLOWED_MESSAGE };
     return { error: "สมัครไม่สำเร็จ ลองใหม่อีกครั้ง" };
   }
   if (!data.session) return { error: "ยังต้องปิด Confirm email ใน Supabase ก่อน (บอก Claude ได้เลย)" };
