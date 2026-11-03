@@ -46,6 +46,12 @@ async function prepare(planId: string): Promise<{ data: PlanData } | { error: st
 }
 
 function toError(e: unknown): string {
+  if (!(e instanceof AiError)) {
+    // ข้อผิดพลาดที่ไม่ได้มาจากการเรียก AI เอง: บันทึกสาเหตุไว้ใน log ฝั่งเซิร์ฟเวอร์
+    console.error("[ai] unexpected error", e instanceof Error ? { name: e.name, message: e.message, stack: e.stack?.split("\n").slice(0, 4).join(" | ") } : e);
+  } else {
+    console.error("[ai] ai error", e.code);
+  }
   return AI_ERROR_TEXT[e instanceof AiError ? e.code : "unknown"];
 }
 
