@@ -3,9 +3,9 @@
 // symbol must be one Thai consonant, Latin letter, digit or ฿ (no emoji): icons
 // render with the bundled Thai font only.
 export const brand = {
-  name: "แอปของฉัน",
-  shortName: "แอปของฉัน",
-  description: "สร้างด้วย Claude Code",
-  color: "#16a34a",
-  symbol: "ก",
+  name: "ANNA HR วางแผนธุรกิจ",
+  shortName: "ANNA HR",
+  description: "กรอกพิมพ์เขียวธุรกิจ 13 หัวข้อ มี AI ช่วยร่าง และส่งให้ผู้ตรวจอนุมัติทีละหัวข้อ",
+  color: "#1C244B",
+  symbol: "A",
 };

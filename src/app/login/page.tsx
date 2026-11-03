@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { brand } from "@/lib/brand";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { login, signup } from "./actions";
@@ -17,10 +18,19 @@ export default function LoginPage() {
   const pending = isLogin ? loginPending : signupPending;
 
   return (
-    <main className="flex flex-1 items-center justify-center bg-muted/40 p-6">
+    <main className="flex flex-1 flex-col items-center justify-center gap-6 p-6">
+      <div className="flex flex-col items-center gap-3 text-center">
+        <span className="flex size-14 items-center justify-center rounded-2xl bg-primary text-2xl font-semibold text-primary-foreground">
+          {brand.symbol}
+        </span>
+        <div>
+          <h1 className="text-xl font-semibold">{brand.name}</h1>
+          <p className="text-sm text-muted-foreground">เข้าสู่ระบบเพื่อกรอกแผนธุรกิจของคุณ</p>
+        </div>
+      </div>
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle className="text-2xl">{isLogin ? "เข้าสู่ระบบ" : "สมัครสมาชิก"}</CardTitle>
+          <CardTitle className="text-lg">{isLogin ? "เข้าสู่ระบบ" : "สมัครสมาชิก"}</CardTitle>
         </CardHeader>
         <CardContent>
           <form action={isLogin ? loginAction : signupAction} className="space-y-4">

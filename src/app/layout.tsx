@@ -1,13 +1,19 @@
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Sans_Thai, Geist_Mono } from "next/font/google";
+import { Anuphan, Poppins, Geist_Mono } from "next/font/google";
+import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { brand } from "@/lib/brand";
 import "./globals.css";
 
-const plexThai = IBM_Plex_Sans_Thai({
-  variable: "--font-sans",
+const anuphan = Anuphan({
+  variable: "--font-anuphan",
   subsets: ["thai", "latin"],
-  weight: ["300", "400", "500", "600", "700"],
+});
+
+const poppins = Poppins({
+  variable: "--font-poppins",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
 const geistMono = Geist_Mono({
@@ -29,11 +35,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="th"
-      className={`${plexThai.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
+      className={`${anuphan.variable} ${poppins.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        {children}
-        <Toaster richColors position="top-center" />
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          {children}
+          <Toaster richColors position="top-center" />
+        </ThemeProvider>
       </body>
     </html>
   );
