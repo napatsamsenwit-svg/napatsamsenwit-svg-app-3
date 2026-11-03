@@ -29,6 +29,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { Json } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
 import { AiBar, CellAi } from "./ai-controls";
+import { FishboneDiagram } from "./fishbone-diagram";
 import { SectionBody } from "./section-body";
 
 export type SectionState = { data: SectionData; status: SectionStatus };
@@ -466,6 +467,15 @@ export function PlanEditor({
               ) : null
             }
           />
+
+          {current.id === "fishbone" &&
+            (isLocked(cur.status) ? (
+              <FishboneDiagram section={current} data={cur.data} />
+            ) : (
+              <Card className="p-4 text-sm text-muted-foreground print:hidden">
+                เมื่อกด &quot;ส่งตรวจ&quot; ยืนยันข้อมูลหัวข้อนี้แล้ว จะมีปุ่ม &quot;สร้างแผนผังก้างปลา&quot; ให้สร้างรูปและดาวน์โหลดได้ที่นี่
+              </Card>
+            ))}
 
           {reviewPanel?.(current.id, cur.status)}
 
