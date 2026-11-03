@@ -12,29 +12,15 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { competencyRow, type DictEntry } from "@/lib/competency";
 import type { Row } from "@/lib/form-logic";
 import { cn } from "@/lib/utils";
-
-type DictLevel = { n: number; label: string; desc: string; beh: string[] };
-type DictEntry = {
-  id: string;
-  type: string;
-  gth: string;
-  file: string;
-  table: number;
-  code: string;
-  name: string;
-  def: string;
-  levels: DictLevel[];
-};
 
 const TYPE_LABEL: Record<string, string> = {
   "Core Competency": "สมรรถนะหลัก",
   "Managerial Competency": "สมรรถนะทางการบริหาร",
   "Functional Competency": "สมรรถนะเฉพาะหน้าที่งาน",
 };
-
-const src = (c: DictEntry) => `${c.file} · ${c.code || "ตาราง " + c.table}`;
 
 /** เลือกสมรรถนะจากพจนานุกรมของบริษัท (33 รายการ) แล้วเติมเป็นแถวในตาราง */
 export function CompetencyPicker({ onAdd, disabled }: { onAdd: (row: Row) => void; disabled: boolean }) {
@@ -58,16 +44,7 @@ export function CompetencyPicker({ onAdd, disabled }: { onAdd: (row: Row) => voi
   }, [dict, q]);
 
   const add = (c: DictEntry, level: number) => {
-    const L = c.levels[level - 1];
-    onAdd({
-      name: c.name,
-      type: c.type,
-      definition: c.def,
-      positions: "",
-      level: String(level),
-      indicators: L ? L.beh.map((b) => "- " + b).join("\n") : "",
-      source: src(c),
-    });
+    onAdd(competencyRow(c, level));
     setOpen(false);
     setPicked(null);
     setQ("");

@@ -3,6 +3,9 @@ import { Suspense } from "react";
 import { PlanEditor, type ReviewItem } from "@/components/plan/plan-editor";
 import { requireUser } from "@/lib/plan";
 
+// AI อาจใช้เวลานาน (Server Action ของหน้านี้)
+export const maxDuration = 60;
+
 export default async function PlanPage({ params }: PageProps<"/plans/[id]">) {
   const { id } = await params;
   const { supabase, userId } = await requireUser();

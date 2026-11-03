@@ -20,13 +20,14 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { SECTIONS, SECTION_BY_ID, type Section } from "@/lib/form-schema";
-import { asRows, isFilled, normalizeSection, type SectionData } from "@/lib/form-logic";
+import { asRows, hasVal, isFilled, normalizeSection, type SectionData } from "@/lib/form-logic";
 import { weightGroups } from "@/lib/kpi";
 import { asStatus, STATUS_TEXT, type SectionStatus } from "@/lib/plan-status";
 import { SAMPLE_SECTIONS } from "@/lib/sample-data";
 import { createClient } from "@/lib/supabase/client";
 import type { Json } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
+import { AiBar, CellAi } from "./ai-controls";
 import { SectionBody } from "./section-body";
 
 export type SectionState = { data: SectionData; status: SectionStatus };
@@ -218,6 +219,24 @@ export function PlanEditor({
     toast.success("ล้างข้อมูลตัวอย่างแล้ว ข้อมูลที่คุณกรอกเองไม่ถูกลบ");
   }
 
+  /** AI อ่านข้อมูลจากฐานข้อมูล จึงบันทึกค่าล่าสุดให้เสร็จก่อนเรียก */
+  const beforeAi = useCallback(() => flush(), [flush]);
+
+  function applyAi(sec: Section, generated: SectionData) {
+    const base = cur.data;
+    const next: SectionData = { ...base };
+    sec.fields.forEach((f) => {
+      if (f.noAI || f.type === "cmpEdits") return;
+      if (sec.fillEmptyOnly) {
+        if (!hasVal(f, base[f.k]) && hasVal(f, generated[f.k])) next[f.k] = generated[f.k];
+      } else {
+        next[f.k] = generated[f.k];
+      }
+    });
+    edit(sec.id, next);
+    setMessage({ text: sec.fillEmptyOnly ? "เติมช่องว่างแล้ว ตรวจทานแล้วส่งตรวจได้" : "ใช้ร่างจาก AI แล้ว ตรวจทานและแก้ไขต่อได้", kind: "ok" });
+  }
+
   function validate(sec: Section, d: SectionData) {
     if (!sec.dictOnly && !isFilled(sec, d)) return "ยังส่งตรวจไม่ได้ กรอกข้อมูลอย่างน้อยหนึ่งช่องก่อน";
     if (sec.id === "kpis") {
@@ -390,12 +409,42 @@ export function PlanEditor({
             </div>
           )}
 
+          {!locked && (
+            <AiBar
+              key={current.id}
+              planId={planId}
+              section={current}
+              data={cur.data}
+              onReq={(text) => edit(current.id, { ...cur.data, _req: text })}
+              onApply={(g) => applyAi(current, g)}
+              beforeAi={beforeAi}
+            />
+          )}
+
           <SectionBody
             section={current}
             data={cur.data}
             disabled={locked}
             onChange={(d) => edit(current.id, d)}
             onMessage={(text) => setMessage({ text, kind: "err" })}
+            cellExtra={(f, c, r, ri) =>
+              c.ai && !locked ? (
+                <CellAi
+                  planId={planId}
+                  section={current}
+                  field={f}
+                  col={c}
+                  row={r}
+                  beforeAi={beforeAi}
+                  onUse={(text) =>
+                    edit(current.id, {
+                      ...cur.data,
+                      [f.k]: asRows(cur.data[f.k]).map((x, i) => (i === ri ? { ...x, [c.k]: text } : x)),
+                    })
+                  }
+                />
+              ) : null
+            }
           />
 
           {reviewPanel?.(current.id, cur.status)}
