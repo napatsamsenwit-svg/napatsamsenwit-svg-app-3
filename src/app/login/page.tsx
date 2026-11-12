@@ -1,13 +1,11 @@
 "use client";
 
-import { Suspense, useActionState, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useActionState, useState } from "react";
 import { ClipboardCheck, Eye, EyeOff, FileText, Lock, Mail, Sparkles } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { NOT_ALLOWED_MESSAGE } from "@/lib/allowed-emails";
 import { cn } from "@/lib/utils";
 import { login, signup } from "./actions";
 
@@ -20,16 +18,6 @@ const FEATURES = [
   },
   { icon: FileText, title: "ลดเวลาประเมินจาก 4 เดือน เหลือ 4 วัน", text: "ส่งตรวจ อนุมัติ และออกรายงานได้ในระบบเดียว" },
 ];
-
-function BlockedNotice() {
-  const blocked = useSearchParams().get("blocked") === "1";
-  if (!blocked) return null;
-  return (
-    <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
-      {NOT_ALLOWED_MESSAGE}
-    </p>
-  );
-}
 
 export default function LoginPage() {
   const [mode, setMode] = useState<"login" | "signup">("login");
@@ -90,10 +78,6 @@ export default function LoginPage() {
               {isLogin ? "เข้าใช้งานระบบ HR AI สำหรับองค์กรของคุณ" : "สร้างบัญชีผู้ใช้งานเพื่อเริ่มใช้ระบบ HR AI"}
             </p>
           </div>
-
-          <Suspense>
-            <BlockedNotice />
-          </Suspense>
 
           <div className="grid grid-cols-2 gap-1 rounded-xl bg-muted p-1" role="tablist" aria-label="เลือกเข้าสู่ระบบหรือสมัครสมาชิก">
             {(["login", "signup"] as const).map((m) => (
