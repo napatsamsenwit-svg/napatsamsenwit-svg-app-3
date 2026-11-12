@@ -84,6 +84,7 @@ export default async function SummaryPage({ params }: PageProps<"/plans/[id]/sum
           dateText={today}
           md={md}
           json={json}
+          planId={id}
         />
 
         <pre className="max-h-[480px] overflow-auto rounded-[10px] bg-muted p-6 text-sm leading-relaxed whitespace-pre-wrap">{md}</pre>

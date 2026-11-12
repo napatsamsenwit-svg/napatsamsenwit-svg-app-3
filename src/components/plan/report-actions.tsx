@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { FileSpreadsheet, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/client";
 import type { SectionData } from "@/lib/form-logic";
 import { SECTION_BY_ID } from "@/lib/form-schema";
 import { buildXlsx, type ExportItem } from "@/lib/export-xlsx";
@@ -33,13 +35,17 @@ export function ReportActions({
   dateText,
   md,
   json,
+  planId,
 }: {
+  planId: string;
   items: Item[];
   company: string;
   dateText: string;
   md: string;
   json: string;
 }) {
+  const router = useRouter();
+  const [armed, setArmed] = useState(false);
   const [busy, setBusy] = useState<"pdf" | "xlsx" | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -105,6 +111,26 @@ export function ReportActions({
     setStatus(`บันทึก ${name} แล้ว`);
   }
 
+  async function clearAll() {
+    if (!armed) {
+      setArmed(true);
+      setStatus(null);
+      setError("กดอีกครั้งเพื่อล้างทั้งหมด ข้อมูลที่ยังไม่ส่งตรวจจะถูกลบ (หัวข้อที่ส่งตรวจหรืออนุมัติแล้วจะไม่ถูกลบ)");
+      return;
+    }
+    setArmed(false);
+    setError(null);
+    // ฐานข้อมูลอนุญาตให้แก้เฉพาะหัวข้อที่ยังไม่ส่งตรวจ จึงไม่กระทบหัวข้อที่ล็อกไว้
+    const { error: e } = await createClient()
+      .from("plan_sections")
+      .update({ data: {}, status: "empty" })
+      .eq("plan_id", planId)
+      .in("status", ["filling", "returned"]);
+    if (e) return void setError("ล้างข้อมูลไม่สำเร็จ ลองใหม่อีกครั้ง");
+    setStatus("ล้างข้อมูลที่ยังไม่ส่งตรวจแล้ว");
+    router.refresh();
+  }
+
   async function xlsx() {
     setBusy("xlsx");
     setError(null);
@@ -155,6 +181,14 @@ export function ReportActions({
       >
         <FileSpreadsheet className="size-4" />
         {busy === "xlsx" ? "กำลังสร้างไฟล์…" : "ดาวน์โหลด Excel"}
+      </Button>
+      <Button
+        type="button"
+        variant="outline"
+        className={armed ? "h-11 border-destructive bg-destructive/10 text-destructive md:h-10" : "h-11 md:h-10"}
+        onClick={() => void clearAll()}
+      >
+        {armed ? "กดอีกครั้งเพื่อล้างทั้งหมด" : "ล้างข้อมูลทั้งหมด"}
       </Button>
       {status && !error && (
         <p className="basis-full text-sm text-muted-foreground" role="status">
