@@ -349,21 +349,26 @@ export function PlanEditor({
     <div className="print:block">
       <div className="min-w-0 space-y-5 pb-20">
         <div className="space-y-3 print:hidden">
-          <div className="space-y-1">
+          <div className="space-y-2 rounded-2xl bg-brand-surface px-5 py-5 text-brand-surface-foreground md:px-7 md:py-6">
+            <p className="text-xs font-semibold tracking-widest text-gold">ANNA HR · BUSINESS PLANNING</p>
             <div className="flex flex-wrap items-center gap-3">
-              <h1 className="min-w-0 flex-1 text-2xl font-semibold">{title}</h1>
+              <h1 className="min-w-0 flex-1 text-2xl leading-snug font-bold md:text-3xl">
+                AI-ANNA Business Blueprint (พิมพ์เขียวธุรกิจ)
+              </h1>
               {!readOnly && (
                 <Link
                   href={`/plans/${planId}/summary`}
-                  className="inline-flex h-11 items-center gap-2 rounded-lg border bg-background px-3 text-sm font-medium transition-colors hover:bg-muted md:h-9"
+                  className="inline-flex h-11 items-center gap-2 rounded-lg bg-gold px-3 text-sm font-medium text-gold-foreground transition-opacity hover:opacity-90 md:h-9"
                 >
                   <FileText className="size-4" />
                   ดูสรุปทั้งแผน
                 </Link>
               )}
             </div>
-            <p className="text-sm text-muted-foreground">
-              {readOnly ? "ผู้ตรวจดูได้อย่างเดียว" : "AI-ANNA Business Blueprint 13 หัวข้อ ข้อมูลบันทึกอัตโนมัติ"}
+            <p className="text-sm leading-relaxed opacity-80">
+              13 หัวข้อ ตั้งแต่ข้อมูลบริษัทจนถึงแผนพัฒนารายบุคคล · ข้อมูลบันทึกอัตโนมัติ · สิทธิ์ของคุณ:{" "}
+              {readOnly ? "ดูแผนและตรวจ (ดูได้อย่างเดียว)" : "กรอกและส่งตรวจ"}
+              {title ? ` · ${title}` : ""}
             </p>
           </div>
           <div className="print:hidden">{navGrid}</div>
