@@ -20,7 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { SECTIONS, SECTION_BY_ID, type Section } from "@/lib/form-schema";
-import { asRows, hasVal, isFilled, normalizeSection, type SectionData } from "@/lib/form-logic";
+import { asRows, asText, hasVal, isFilled, normalizeSection, type SectionData } from "@/lib/form-logic";
 import { weightGroups } from "@/lib/kpi";
 import { asStatus, STATUS_TEXT, type SectionStatus } from "@/lib/plan-status";
 import { SAMPLE_SECTIONS } from "@/lib/sample-data";
@@ -28,6 +28,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { Json } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
 import { AiBar, CellAi } from "./ai-controls";
+import { BmcImage, OrgImage } from "./canvas-exports";
 import { FishboneDiagram } from "./fishbone-diagram";
 import { SectionBody } from "./section-body";
 
@@ -461,14 +462,9 @@ export function PlanEditor({
             }
           />
 
-          {current.id === "fishbone" &&
-            (isLocked(cur.status) ? (
-              <FishboneDiagram section={current} data={cur.data} />
-            ) : (
-              <Card className="p-4 text-sm text-muted-foreground print:hidden">
-                เมื่อกด &quot;ส่งตรวจ&quot; ยืนยันข้อมูลหัวข้อนี้แล้ว จะมีปุ่ม &quot;สร้างแผนผังก้างปลา&quot; ให้สร้างรูปและดาวน์โหลดได้ที่นี่
-              </Card>
-            ))}
+          {current.id === "fishbone" && <FishboneDiagram section={current} data={cur.data} />}
+          {current.id === "bmc" && <BmcImage data={cur.data} company={asText(sections.company?.data.name)} />}
+          {current.id === "org" && <OrgImage data={cur.data} company={asText(sections.company?.data.name)} />}
 
           {reviewPanel?.(current.id, cur.status)}
 

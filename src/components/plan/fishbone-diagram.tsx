@@ -193,7 +193,7 @@ function save(name: string, blob: Blob) {
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
-/** รูปแผนผังก้างปลา: สร้างได้เมื่อหัวข้อยืนยัน (ส่งตรวจ) แล้ว ดาวน์โหลดเป็น PNG หรือ SVG */
+/** รูปแผนผังก้างปลา: สร้างได้ทุกเมื่อที่มีข้อมูล (ไม่ต้องรอส่งตรวจ) ดาวน์โหลดเป็น PNG หรือ SVG */
 export function FishboneDiagram({ section, data }: { section: Parameters<typeof isFilled>[0]; data: SectionData }) {
   const [detail, setDetail] = useState(false);
   const [svg, setSvg] = useState<string | null>(null);
@@ -251,7 +251,7 @@ export function FishboneDiagram({ section, data }: { section: Parameters<typeof 
     <Card className="space-y-3 p-4 print:hidden">
       <div>
         <h3 className="text-lg font-medium">รูปแผนผังก้างปลา</h3>
-        <p className="text-sm text-muted-foreground">สร้างรูปจากข้อมูลที่ยืนยันแล้ว ดาวน์โหลดเป็นภาพไปใส่เอกสารหรือสไลด์ได้</p>
+        <p className="text-sm text-muted-foreground">สร้างรูปจากข้อมูลที่กรอกไว้ได้ทุกเมื่อ ไม่ต้องรอส่งตรวจ ดาวน์โหลดเป็นภาพไปใส่เอกสารหรือสไลด์ได้</p>
       </div>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <Button type="button" className="h-11 md:h-9" onClick={() => void draw()}>
