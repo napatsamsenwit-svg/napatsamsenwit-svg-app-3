@@ -15,7 +15,9 @@ function readCredentials(formData: FormData) {
 }
 
 async function markLive() {
-  (await cookies()).set(LIVE_COOKIE, "1", { httpOnly: true, sameSite: "lax", path: "/", secure: process.env.NODE_ENV === "production" });
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("get_session_epoch");
+  (await cookies()).set(LIVE_COOKIE, !error && typeof data === "string" ? data : "1", { httpOnly: true, sameSite: "lax", path: "/", secure: process.env.NODE_ENV === "production" });
 }
 
 export async function login(_prev: AuthState, formData: FormData): Promise<AuthState> {
@@ -45,6 +47,16 @@ export async function signup(_prev: AuthState, formData: FormData): Promise<Auth
 
 export async function logout() {
   const supabase = await createClient();
+  await supabase.auth.signOut();
+  (await cookies()).delete(LIVE_COOKIE);
+  redirect("/login");
+}
+
+/** ผู้ตรวจกด "รีเซ็ตเว็บ": ทุกคนต้องล็อกอินใหม่ทันที (รวมถึงคนที่เปิดค้างอยู่) */
+export async function resetAllSessions(): Promise<{ error: string }> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("reset_all_sessions");
+  if (error) return { error: "รีเซ็ตไม่สำเร็จ (เฉพาะผู้ตรวจเท่านั้น หรือฐานข้อมูลยังไม่ได้อัปเดต)" };
   await supabase.auth.signOut();
   (await cookies()).delete(LIVE_COOKIE);
   redirect("/login");

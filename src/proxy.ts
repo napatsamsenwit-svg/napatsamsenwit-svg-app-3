@@ -3,6 +3,16 @@ import { NextResponse, type NextRequest } from "next/server";
 import { LIVE_COOKIE } from "@/lib/session-marker";
 import { isSupabaseConfigured, supabaseKey, supabaseUrl } from "@/lib/supabase/config";
 
+/** รหัสรุ่นเซสชันทั้งระบบ (เปลี่ยนเมื่อผู้ตรวจกด "รีเซ็ตเว็บ") แคชสั้น ๆ เพื่อไม่ถามฐานข้อมูลทุกคำขอ */
+let epochCache: { v: string; at: number } | null = null;
+async function currentEpoch(supabase: { rpc: (fn: string) => PromiseLike<{ data: unknown; error: unknown }> }) {
+  if (epochCache && Date.now() - epochCache.at < 10_000) return epochCache.v;
+  const { data, error } = await supabase.rpc("get_session_epoch");
+  const v = !error && typeof data === "string" ? data : "1";
+  epochCache = { v, at: Date.now() };
+  return v;
+}
+
 const PUBLIC_PATHS = ["/login", "/opengraph-image", "/icon", "/apple-icon", "/manifest.webmanifest"];
 
 export async function proxy(request: NextRequest) {
@@ -32,7 +42,8 @@ export async function proxy(request: NextRequest) {
   const isPublic = PUBLIC_PATHS.some((path) => request.nextUrl.pathname.startsWith(path));
 
   // ล็อกอินค้างจากการเปิดเว็บครั้งก่อน (ไม่มีคุกกี้เซสชัน): ล้างแล้วให้ล็อกอินใหม่ทุกครั้ง
-  const live = request.cookies.get(LIVE_COOKIE)?.value === "1";
+  const liveValue = request.cookies.get(LIVE_COOKIE)?.value;
+  const live = !!liveValue && liveValue === (await currentEpoch(supabase));
   if (data?.claims && !live && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";

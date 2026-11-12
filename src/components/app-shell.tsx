@@ -3,14 +3,15 @@
 import { useEffect, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardCheck, FileText, LogOut } from "lucide-react";
+import { ClipboardCheck, FileText, LogOut, ShieldAlert } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { BrandLogo } from "@/components/brand-logo";
 import { brand } from "@/lib/brand";
 import { TAB_FLAG } from "@/lib/session-marker";
 import { cn } from "@/lib/utils";
-import { logout } from "@/app/login/actions";
+import { logout, resetAllSessions } from "@/app/login/actions";
 
 const noSubscribe = () => () => {};
 const readTabFlag = () => {
@@ -70,6 +71,23 @@ export function AppShell({
           </nav>
           <div className="ml-auto flex items-center gap-1">
             <span className="hidden max-w-48 truncate text-sm text-muted-foreground lg:inline">{email}</span>
+            {isReviewer && (
+              <Button
+                type="button"
+                variant="ghost"
+                className="h-11 gap-1.5 px-2 text-sm md:h-9"
+                aria-label="รีเซ็ตเว็บ ให้ทุกคนล็อกอินใหม่"
+                title="รีเซ็ตเว็บ: ให้ทุกคนล็อกอินใหม่"
+                onClick={async () => {
+                  if (!window.confirm("รีเซ็ตเว็บ?\nทุกคนที่ล็อกอินอยู่ (รวมถึงคุณ) จะถูกออกจากระบบทันที และต้องล็อกอินใหม่")) return;
+                  const r = await resetAllSessions();
+                  if (r?.error) toast.error(r.error);
+                }}
+              >
+                <ShieldAlert className="size-5" />
+                <span className="hidden md:inline">รีเซ็ตเว็บ</span>
+              </Button>
+            )}
             <ThemeToggle />
             <form action={logout}>
               <Button type="submit" variant="ghost" size="icon" className="size-11 md:size-9" aria-label="ออกจากระบบ">

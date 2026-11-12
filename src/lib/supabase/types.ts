@@ -110,6 +110,8 @@ export type Database = {
     Views: { [_ in never]: never }
     Functions: {
       is_reviewer: { Args: never; Returns: boolean }
+      get_session_epoch: { Args: never; Returns: string }
+      reset_all_sessions: { Args: never; Returns: string }
       review_section: {
         Args: { p_action: string; p_note?: string; p_plan_id: string; p_section_key: string }
         Returns: undefined
