@@ -53,7 +53,6 @@ function buildSvg(
       ? new Intl.Segmenter("th", { granularity: "word" })
       : null;
   const fC = `400 13px ${font}`;
-  const fL = `600 14px ${font}`;
   const fH = `600 15px ${font}`;
 
   const wrap = (text: string, max: number, f: string) => {
@@ -106,16 +105,30 @@ function buildSvg(
         .filter(Boolean)
         .map((t) => wrap(detail ? t : headOf(t), textMax, fC));
       const h = items.reduce((a, l) => a + l.length * LH + GAP, 0) || LH + GAP;
-      return { label: (c.name ?? "").trim() || `หมวดที่ ${ci + 1}`, items, h };
+      const label = (c.name ?? "").trim() || `หมวดที่ ${ci + 1}`;
+      // ป้ายชื่อหมวด: ลดขนาดตัวอักษรให้พอดีหนึ่งบรรทัด ถ้ายังไม่พอให้ตัดขึ้นบรรทัดใหม่ ป้ายจึงไม่ทับกัน
+      const labMax = colW - 20;
+      let labFs = 14;
+      ctx.font = `600 ${labFs}px ${font}`;
+      while (labFs > 11 && ctx.measureText(label).width + 28 > labMax) {
+        labFs -= 1;
+        ctx.font = `600 ${labFs}px ${font}`;
+      }
+      const labLines = ctx.measureText(label).width + 28 > labMax ? wrap(label, labMax - 28, `600 ${labFs}px ${font}`) : [label];
+      const labW = Math.min(labMax, Math.max(...labLines.map((l) => ctx.measureText(l).width)) + 28);
+      const labH = labLines.length * (labFs + 5) + 14;
+      return { label, labLines, labFs, labW, labH, items, h };
     });
   // แบ่งหมวดครึ่งบนครึ่งล่างของกระดูกสันหลัง จำนวนหมวดเป็นเท่าไรก็ได้
   const nTop = Math.max(1, Math.ceil(cats.length / 2));
   const nCols = nTop;
   const topCats = cats.slice(0, nTop);
   const botCats = cats.slice(nTop);
-  const topH = Math.max(0, ...topCats.map((c) => c.h)) + LABH + 34;
+  const topLab = Math.max(LABH, ...topCats.map((c) => c.labH));
+  const botLab = Math.max(LABH, ...botCats.map((c) => c.labH));
+  const topH = Math.max(0, ...topCats.map((c) => c.h)) + topLab + 34;
   const botH = botCats.length
-    ? Math.max(...botCats.map((c) => c.h)) + LABH + 34
+    ? Math.max(...botCats.map((c) => c.h)) + botLab + 34
     : 0;
   const headW = 250;
   const problem = asText(d.problem).trim();
@@ -155,21 +168,22 @@ function buildSvg(
     const top = i < nTop;
     const j = top ? i : i - nTop;
     const bx = x0 + (j + 1) * colW - 24;
-    const yEnd = top ? spineY - topH + LABH + 6 : spineY + botH - LABH - 6;
+    const yEnd = top ? spineY - topH + topLab + 6 : spineY + botH - botLab - 6;
     const xFar = bx - slant;
     const boneAt = (y: number) =>
       xFar + (bx - xFar) * ((y - yEnd) / (spineY - yEnd));
     o.push(
       `<line x1="${xFar}" y1="${yEnd}" x2="${bx}" y2="${spineY}" stroke="${C.bone}" stroke-width="2.5" stroke-linecap="round"/>`,
     );
-    ctx.font = fL;
-    const lw = ctx.measureText(c.label).width + 28;
-    const ly = top ? yEnd - LABH : yEnd;
+    const ly = top ? yEnd - c.labH : yEnd;
     o.push(
-      `<rect x="${xFar - lw / 2}" y="${ly}" width="${lw}" height="${LABH}" rx="8" fill="${C.label}"/>`,
+      `<rect x="${xFar - c.labW / 2}" y="${ly}" width="${c.labW}" height="${c.labH}" rx="8" fill="${C.label}"/>`,
     );
+    const ty0 = ly + c.labH / 2 - ((c.labLines.length - 1) * (c.labFs + 5)) / 2 + c.labFs * 0.36;
     o.push(
-      `<text x="${xFar}" y="${ly + LABH / 2 + 5}" text-anchor="middle" font-size="14" font-weight="600" fill="${C.labelInk}">${xe(c.label)}</text>`,
+      `<text x="${xFar}" y="${ty0}" text-anchor="middle" font-size="${c.labFs}" font-weight="600" fill="${C.labelInk}">${c.labLines
+        .map((l, k) => `<tspan x="${xFar}" dy="${k ? c.labFs + 5 : 0}">${xe(l)}</tspan>`)
+        .join("")}</text>`,
     );
     let y = top ? yEnd + 22 : spineY + 24;
     if (!c.items.length) {
