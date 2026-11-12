@@ -28,13 +28,13 @@ const cw = (o: Orient) => DIM[o].w - PX * 2;
 const ch = (o: Orient) => DIM[o].h - HEAD - FOOT - TOP_PAD;
 
 const NAVY = "#1C244B";
-const GOLD = "#F2DE32";
+// สีตาม CI ของ CSR Consulting Group: น้ำเงินเข้ม + เหลือง
+const GOLD = "#F5E51E";
 const INK = "#1D2140";
 const GRAY = "#5A6285";
 const LINE = "#C9CDE0";
-const TEAL = "#0B7A85";
-const ORANGE = "#D9661A";
-const BLUE = "#2F5FB3";
+const NAVY_MID = "#2B3A82";
+const YELLOW_SOFT = "#FDF8C9";
 
 type Part = {
   no: number;
@@ -60,8 +60,8 @@ const PARTS: Part[] = [
     title: "การวิเคราะห์และโมเดลธุรกิจ",
     en: "Analysis & Business Model",
     desc: "SWOT แผนผังก้างปลา และ Business Model Canvas",
-    main: TEAL,
-    light: "#E0F3F5",
+    main: NAVY_MID,
+    light: YELLOW_SOFT,
     ids: ["swot", "fishbone", "bmc"],
   },
   {
@@ -69,8 +69,8 @@ const PARTS: Part[] = [
     title: "โครงสร้างองค์กรและบุคลากร",
     en: "Organization & People",
     desc: "โครงสร้างองค์กร บทบาท KPI สมรรถนะ และแผนพัฒนารายบุคคล",
-    main: ORANGE,
-    light: "#FDEBDD",
+    main: NAVY,
+    light: "#E8EBF6",
     ids: ["org", "roles", "kpis", "competency", "idp"],
   },
 ];
@@ -105,7 +105,7 @@ type Page = {
 
 /* ---------- ลวดลายตกแต่ง (แท่งเฉียงหลากสี คล้ายโลโก้ในรายงานตัวอย่าง) ---------- */
 
-const BAR_COLORS = [GOLD, NAVY, TEAL, ORANGE, BLUE, "#C9CDE0"];
+const BAR_COLORS = [GOLD, NAVY, NAVY_MID, GOLD, "#4A5AA8", "#C9CDE0"];
 const BAR_H = [150, 230, 110, 260, 180, 90, 210, 130];
 
 function Bars({
@@ -717,7 +717,7 @@ function Cover({ company, dateText }: { company: string; dateText: string }) {
         />
         <div
           style={{
-            color: TEAL,
+            color: NAVY_MID,
             fontSize: 13,
             fontWeight: 600,
             letterSpacing: 3,
@@ -750,7 +750,7 @@ function Cover({ company, dateText }: { company: string; dateText: string }) {
         />
         <div
           style={{
-            color: ORANGE,
+            color: NAVY,
             fontSize: 24,
             fontWeight: 700,
             lineHeight: 1.55,
