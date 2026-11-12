@@ -6,6 +6,7 @@ import { BrandLogo } from "@/components/brand-logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TAB_FLAG } from "@/lib/session-marker";
 import { cn } from "@/lib/utils";
 import { login, signup } from "./actions";
 
@@ -22,6 +23,8 @@ const FEATURES = [
 export default function LoginPage() {
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [showPassword, setShowPassword] = useState(false);
+  // กันเบราว์เซอร์เติมรหัสผ่านที่จำไว้เอง: ช่องรหัสผ่านอ่านอย่างเดียวจนกว่าจะกดเข้าไปพิมพ์
+  const [armed, setArmed] = useState(false);
   const [loginState, loginAction, loginPending] = useActionState(login, null);
   const [signupState, signupAction, signupPending] = useActionState(signup, null);
 
@@ -97,7 +100,18 @@ export default function LoginPage() {
             ))}
           </div>
 
-          <form action={isLogin ? loginAction : signupAction} className="space-y-4">
+          <form
+            action={isLogin ? loginAction : signupAction}
+            autoComplete="off"
+            className="space-y-4"
+            onSubmit={() => {
+              try {
+                sessionStorage.setItem(TAB_FLAG, "1");
+              } catch {
+                /* ไม่มี sessionStorage: ใช้เฉพาะคุกกี้เซสชัน */
+              }
+            }}
+          >
             <div className="space-y-2">
               <Label htmlFor="email">อีเมล</Label>
               <div className="relative">
@@ -106,7 +120,11 @@ export default function LoginPage() {
                   id="email"
                   name="email"
                   type="email"
-                  autoComplete="email"
+                  autoComplete="off"
+                  data-lpignore="true"
+                  data-1p-ignore
+                  readOnly={!armed}
+                  onFocus={() => setArmed(true)}
                   placeholder="เช่น somchai@company.co.th"
                   required
                   className="h-11 pl-9"
@@ -121,7 +139,11 @@ export default function LoginPage() {
                   id="password"
                   name="password"
                   type={showPassword ? "text" : "password"}
-                  autoComplete={isLogin ? "current-password" : "new-password"}
+                  autoComplete="new-password"
+                  data-lpignore="true"
+                  data-1p-ignore
+                  readOnly={!armed}
+                  onFocus={() => setArmed(true)}
                   placeholder={isLogin ? "รหัสผ่านของคุณ" : "อย่างน้อย 6 ตัว"}
                   minLength={6}
                   required
@@ -147,6 +169,8 @@ export default function LoginPage() {
                     name="confirmPassword"
                     type={showPassword ? "text" : "password"}
                     autoComplete="new-password"
+                    data-lpignore="true"
+                    data-1p-ignore
                     placeholder="พิมพ์รหัสผ่านอีกครั้ง"
                     minLength={6}
                     required

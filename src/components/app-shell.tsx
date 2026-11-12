@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ClipboardCheck, FileText, LogOut } from "lucide-react";
@@ -7,8 +8,18 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { BrandLogo } from "@/components/brand-logo";
 import { brand } from "@/lib/brand";
+import { TAB_FLAG } from "@/lib/session-marker";
 import { cn } from "@/lib/utils";
 import { logout } from "@/app/login/actions";
+
+const noSubscribe = () => () => {};
+const readTabFlag = () => {
+  try {
+    return sessionStorage.getItem(TAB_FLAG) === "1";
+  } catch {
+    return true;
+  }
+};
 
 const navItems = [
   { href: "/", label: "แผนของฉัน", icon: FileText, match: "/plans", reviewerOnly: false },
@@ -25,6 +36,11 @@ export function AppShell({
   email: string;
 }) {
   const pathname = usePathname();
+  // เปิดแท็บหรือหน้าต่างใหม่ (ไม่มีแฟล็กในแท็บนี้) ต้องล็อกอินใหม่ทุกครั้ง
+  const tabLive = useSyncExternalStore(noSubscribe, readTabFlag, () => null);
+  useEffect(() => {
+    if (tabLive === false) void logout();
+  }, [tabLive]);
   const items = navItems.filter((item) => !item.reviewerOnly || isReviewer);
   const isActive = (item: (typeof navItems)[number]) =>
     item.href === "/" ? pathname === "/" || pathname.startsWith("/plans") : pathname.startsWith(item.match);
@@ -64,7 +80,7 @@ export function AppShell({
         </div>
       </header>
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-6 pb-24 md:pb-10 print:max-w-none print:p-0">
-        {children}
+        {tabLive ? children : <p className="py-10 text-center text-sm text-muted-foreground">กำลังตรวจสอบการเข้าสู่ระบบ…</p>}
       </main>
     </div>
   );

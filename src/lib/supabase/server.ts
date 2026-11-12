@@ -13,9 +13,12 @@ export async function createClient() {
       },
       setAll(cookiesToSet) {
         try {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options),
-          );
+          cookiesToSet.forEach(({ name, value, options }) => {
+            // คุกกี้เซสชัน: ไม่ตั้งวันหมดอายุ (ยกเว้นตอนลบ) จึงหายเมื่อปิดเบราว์เซอร์
+            const { maxAge, expires, ...rest } = options ?? {};
+            void expires;
+            cookieStore.set(name, value, maxAge === 0 ? options : rest);
+          });
         } catch {
           // Server Components cannot set cookies; proxy.ts refreshes the session instead.
         }

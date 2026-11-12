@@ -1,6 +1,8 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { LIVE_COOKIE } from "@/lib/session-marker";
 import { createClient } from "@/lib/supabase/server";
 
 export type AuthState = { error: string } | null;
@@ -12,11 +14,16 @@ function readCredentials(formData: FormData) {
   };
 }
 
+async function markLive() {
+  (await cookies()).set(LIVE_COOKIE, "1", { httpOnly: true, sameSite: "lax", path: "/", secure: process.env.NODE_ENV === "production" });
+}
+
 export async function login(_prev: AuthState, formData: FormData): Promise<AuthState> {
   const credentials = readCredentials(formData);
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword(credentials);
   if (error) return { error: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" };
+  await markLive();
   redirect("/");
 }
 
@@ -32,11 +39,13 @@ export async function signup(_prev: AuthState, formData: FormData): Promise<Auth
     return { error: "สมัครไม่สำเร็จ ลองใหม่อีกครั้ง" };
   }
   if (!data.session) return { error: "ยังต้องปิด Confirm email ใน Supabase ก่อน (บอก Claude ได้เลย)" };
+  await markLive();
   redirect("/");
 }
 
 export async function logout() {
   const supabase = await createClient();
   await supabase.auth.signOut();
+  (await cookies()).delete(LIVE_COOKIE);
   redirect("/login");
 }
