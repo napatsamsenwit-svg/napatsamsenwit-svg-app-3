@@ -15,7 +15,7 @@
 |---|---|---|
 | Cloudflare | Cloudflare Pro, proxy เปิด (ส้ม), WAF managed rules, rate limit ที่ `/login` | SSL mode: Full (strict) |
 | Gateway + Firewall (DMZ) | Load balancer หรือ Cloudflare Tunnel + Security Group | เปิดรับเฉพาะ 443 จาก IP ของ Cloudflare |
-| Identity / MFA (DMZ) | Supabase Auth + TOTP MFA (ทำในแอปแล้ว: `/security`, `/login/mfa`) | ดูหัวข้อ 6 เรื่องบังคับ MFA ที่ฐานข้อมูล |
+| Identity / MFA (DMZ) | Supabase Auth (อีเมล+รหัสผ่าน) | หน้า MFA ถูกถอดออกตามคำสั่งเจ้าของระบบ ถ้าลูกค้าต้องการให้เปิด TOTP MFA ใหม่ |
 | Web-site / Web-app server (Outbound) | container จาก `Dockerfile` อย่างน้อย 2 ตัว หลัง load balancer | subnet ปิด ไม่มี IP สาธารณะ |
 | Database (Inbound) | Postgres: Supabase แบบ self-host หรือ Supabase Cloud region ใกล้ไทย | รับต่อจาก subnet แอปเท่านั้น |
 | Log + SIEM (Inbound) | Wazuh (manager 1 เครื่อง + agent บนทุกเครื่อง) | ส่ง log ของ container, WAF, Auth เข้า |
@@ -62,7 +62,7 @@ GEMINI_MODEL=gemini-3.6-flash
 7. คงระบบเก่าบน Vercel ไว้ 1–2 สัปดาห์เผื่อย้อนกลับ แล้วค่อยปิด
 
 ## 6. สิ่งที่ควรทำเพิ่ม (ยังไม่ได้ทำ)
-- **บังคับ MFA ที่ฐานข้อมูล:** ตอนนี้ MFA ถูกบังคับที่หน้าล็อกอินของแอป ผู้โจมตีที่ถือ token ระดับ aal1 และเรียก Supabase API ตรง ๆ จะข้ามได้ ควรเพิ่มเงื่อนไข `(auth.jwt()->>'aal') = 'aal2'` ใน RLS policy ของผู้ใช้ที่เปิด MFA (อย่างน้อยกลุ่มผู้ตรวจ)
+- **MFA:** ตอนนี้ไม่มี ถ้าลูกค้าองค์กรบังคับ ให้เปิด TOTP MFA ของ Supabase Auth และบังคับ `aal2` ใน RLS
 - ตั้ง security headers (CSP, HSTS, X-Frame-Options) ที่ Cloudflare หรือใน `next.config.ts`
 - ปิด signup สาธารณะ หรือใช้ระบบเชิญ ถ้าเป็นระบบองค์กร
 - เปิด Leaked password protection ใน Supabase Auth
