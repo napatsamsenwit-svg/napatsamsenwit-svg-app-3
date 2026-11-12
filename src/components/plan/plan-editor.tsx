@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ChevronDown, ChevronLeft, ChevronRight, FileText, Printer, RotateCcw, Send, Sparkles, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileText, Printer, RotateCcw, Send, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { PlanProgress } from "@/components/plan-progress";
 import { StatusPill } from "@/components/status-pill";
@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { SECTIONS, SECTION_BY_ID, type Section } from "@/lib/form-schema";
 import { asRows, hasVal, isFilled, normalizeSection, type SectionData } from "@/lib/form-logic";
 import { weightGroups } from "@/lib/kpi";
@@ -84,7 +83,6 @@ export function PlanEditor({
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [message, setMessage] = useState<{ text: string; kind: "ok" | "err" } | null>(null);
   const [busy, setBusy] = useState(false);
-  const [navOpen, setNavOpen] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
 
   // ผู้ตรวจดูอย่างเดียว: ซิงก์สถานะใหม่ทุกครั้งที่เซิร์ฟเวอร์ส่งข้อมูลมาให้ (หลังตัดสินแล้วรีเฟรช)
@@ -182,7 +180,6 @@ export function PlanEditor({
     (key: string) => {
       void flush();
       setMessage(null);
-      setNavOpen(false);
       router.replace(`${pathname}?s=${key}`, { scroll: false });
       window.scrollTo({ top: 0 });
     },
@@ -299,41 +296,56 @@ export function PlanEditor({
   const history = reviews[current.id] ?? [];
   const lastDecision = [...history].reverse().find((h) => h.action === "returned" || h.action === "approved");
 
-  const navList = (
-    <ul className="space-y-1">
-      {SECTIONS.map((s, i) => (
-        <li key={s.id}>
+  const cardPill: Record<SectionStatus, string> = {
+    empty: "hidden",
+    filling: "bg-gold/30 text-foreground",
+    review: "bg-gold text-gold-foreground",
+    approved: "bg-ok-soft text-ok",
+    returned: "bg-warn-soft text-warn",
+  };
+  const cardText: Record<SectionStatus, string> = { ...STATUS_TEXT, filling: "กรอกแล้ว" };
+
+  const navGrid = (
+    <nav aria-label="หัวข้อทั้ง 13" className="grid grid-cols-2 gap-2 md:grid-cols-4 lg:grid-cols-7">
+      {SECTIONS.map((s, i) => {
+        const active = s.id === current.id;
+        return (
           <button
+            key={s.id}
             type="button"
             onClick={() => go(s.id)}
-            aria-current={s.id === current.id ? "true" : undefined}
+            aria-current={active ? "true" : undefined}
             className={cn(
-              "flex min-h-12 w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-accent",
-              s.id === current.id && "bg-accent font-medium",
+              "flex min-h-24 flex-col gap-1 rounded-xl border bg-card p-3 text-left transition-colors hover:bg-accent",
+              active && "border-b-4 border-primary bg-gold/40 hover:bg-gold/40",
             )}
           >
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary text-xs font-semibold text-primary-foreground tabular-nums">
-              {String(s.no).padStart(2, "0")}
+            <span className="flex items-center justify-between gap-2">
+              <span className="text-sm font-semibold tabular-nums">{String(s.no).padStart(2, "0")}</span>
+              <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", cardPill[statuses[i]])}>
+                {cardText[statuses[i]]}
+              </span>
             </span>
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm">{s.th}</span>
-              <span className="block truncate text-xs text-muted-foreground">{s.en}</span>
-            </span>
-            <StatusPill status={statuses[i]} />
+            <span className={cn("text-sm leading-snug", active ? "font-semibold" : "font-medium")}>{s.th}</span>
+            <span className="text-xs leading-snug text-muted-foreground">{s.en}</span>
           </button>
-        </li>
-      ))}
-    </ul>
+        );
+      })}
+      {!readOnly && (
+        <Link
+          href={`/plans/${planId}/summary`}
+          className="flex min-h-24 flex-col gap-1 rounded-xl border bg-card p-3 text-left transition-colors hover:bg-accent"
+        >
+          <FileText className="size-4" />
+          <span className="text-sm leading-snug font-medium">สรุปและส่งออก</span>
+          <span className="text-xs leading-snug text-muted-foreground">Summary &amp; Export</span>
+        </Link>
+      )}
+    </nav>
   );
 
   return (
-    <div className="lg:grid lg:grid-cols-[18rem_minmax(0,1fr)] lg:gap-8 print:block">
-      <aside className="hidden lg:block print:hidden">
-        <nav aria-label="หัวข้อทั้ง 13" className="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto pr-1">
-          {navList}
-        </nav>
-      </aside>
-
+    <div className="print:block">
       <div className="min-w-0 space-y-5 pb-20">
         <div className="space-y-3 print:hidden">
           <div className="space-y-1">
@@ -353,6 +365,7 @@ export function PlanEditor({
               {readOnly ? "ผู้ตรวจดูได้อย่างเดียว" : "AI-ANNA Business Blueprint 13 หัวข้อ ข้อมูลบันทึกอัตโนมัติ"}
             </p>
           </div>
+          <div className="print:hidden">{navGrid}</div>
           <Card className="p-4">
             <PlanProgress statuses={statuses} total={SECTIONS.length} />
           </Card>
@@ -375,26 +388,6 @@ export function PlanEditor({
               </Button>
             </div>
           )}
-
-          <div className="lg:hidden">
-            <Sheet open={navOpen} onOpenChange={setNavOpen}>
-              <SheetTrigger
-                render={<Button type="button" variant="outline" className="h-12 w-full justify-between px-3 text-base" />}
-              >
-                <span className="truncate">
-                  หัวข้อ {current.no}/{SECTIONS.length} · {current.th}
-                </span>
-                <ChevronDown className="size-5" />
-              </SheetTrigger>
-              <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto">
-                <SheetHeader>
-                  <SheetTitle>เลือกหัวข้อ</SheetTitle>
-                  <SheetDescription>แผนมี 13 หัวข้อ กดเพื่อไปที่หัวข้อนั้น</SheetDescription>
-                </SheetHeader>
-                <div className="px-4 pb-6">{navList}</div>
-              </SheetContent>
-            </Sheet>
-          </div>
         </div>
 
         <section aria-labelledby="sec-title" className="space-y-4" data-section={current.id}>
