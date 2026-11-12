@@ -19,7 +19,7 @@ function cssVar(name: string) {
 }
 
 /** ฟอนต์ของหน้าเว็บ (Anuphan / Poppins) พร้อมฟอนต์สำรอง และโหลดให้พร้อมก่อนวาด */
-async function loadFonts(weights: string[]) {
+export async function loadFonts(weights: string[]) {
   const th = `${cssVar("--font-anuphan") ? cssVar("--font-anuphan") + ", " : ""}${FALLBACK}`;
   const en = `${cssVar("--font-poppins") ? cssVar("--font-poppins") + ", " : ""}${th}`;
   try {

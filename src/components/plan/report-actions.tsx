@@ -1,50 +1,103 @@
 "use client";
 
 import { useState } from "react";
-import { FileSpreadsheet, Printer } from "lucide-react";
+import { FileSpreadsheet, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { SectionData } from "@/lib/form-logic";
 import { SECTION_BY_ID } from "@/lib/form-schema";
 import { buildXlsx, type ExportItem } from "@/lib/export-xlsx";
 import type { SectionStatus } from "@/lib/plan-status";
+import { buildPdf } from "./report-pdf";
 import { renderSectionImage } from "./report-images";
 
 type Item = { id: string; data: SectionData; status: SectionStatus };
 
-const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const fileName = (company: string, ext: string) =>
+  `Anna_AI_Report${company.trim() ? "_" + company.trim().replace(/[\\/:*?"<>|\s]+/g, "_") : ""}.${ext}`;
 
-/** ปุ่มเลือกรูปแบบรีพอร์ต: PDF (ผ่านหน้าต่างพิมพ์ของเบราว์เซอร์) หรือ Excel */
-export function ReportActions({ items, company, dateText }: { items: Item[]; company: string; dateText: string }) {
+function save(blob: Blob, name: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+/** ปุ่มเลือกรูปแบบรีพอร์ต: PDF (ไฟล์ A4 จัดหน้าเป็นเทมเพลต) หรือ Excel (ข้อมูลแยกชีตตามหัวข้อ) */
+export function ReportActions({
+  items,
+  company,
+  dateText,
+}: {
+  items: Item[];
+  company: string;
+  dateText: string;
+}) {
   const [busy, setBusy] = useState<"pdf" | "xlsx" | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  async function renderImages() {
+    const byId = new Map(items.map((i) => [i.id, i]));
+    const [fishbone, bmc, org] = await Promise.all(
+      (["fishbone", "bmc", "org"] as const).map((k) =>
+        renderSectionImage(k, byId.get(k)?.data ?? {}, company),
+      ),
+    );
+    return { fishbone, bmc, org };
+  }
+  const exportItems = (): ExportItem[] =>
+    items.map((i) => ({
+      section: SECTION_BY_ID[i.id],
+      data: i.data,
+      status: i.status,
+    }));
 
   async function pdf() {
     setBusy("pdf");
-    // รอให้รูปทุกใบในรีพอร์ตวาดเสร็จก่อนเปิดหน้าต่างพิมพ์
-    for (let i = 0; i < 40 && document.querySelector('[data-report-img="loading"]'); i++) await wait(250);
+    setError(null);
+    setStatus("กำลังเตรียมรูปประกอบ…");
+    try {
+      const images = await renderImages();
+      const blob = await buildPdf(
+        exportItems(),
+        company,
+        dateText,
+        images,
+        (done, total, label) =>
+          setStatus(
+            total > 1
+              ? `${label} (${Math.round((done / total) * 100)}%)`
+              : label,
+          ),
+      );
+      save(blob, fileName(company, "pdf"));
+      setStatus("ดาวน์โหลดไฟล์ PDF แล้ว");
+    } catch {
+      setStatus(null);
+      setError("สร้างไฟล์ PDF ไม่สำเร็จ ลองกดอีกครั้ง");
+    }
     setBusy(null);
-    window.print();
   }
 
   async function xlsx() {
     setBusy("xlsx");
     setError(null);
+    setStatus("กำลังสร้างไฟล์ Excel…");
     try {
-      const byId = new Map(items.map((i) => [i.id, i]));
-      const exportItems: ExportItem[] = items.map((i) => ({ section: SECTION_BY_ID[i.id], data: i.data, status: i.status }));
-      const [fishbone, bmc, org] = await Promise.all(
-        (["fishbone", "bmc", "org"] as const).map((k) => renderSectionImage(k, byId.get(k)?.data ?? {}, company)),
+      const blob = await buildXlsx(
+        exportItems(),
+        company,
+        dateText,
+        await renderImages(),
       );
-      const blob = await buildXlsx(exportItems, company, dateText, { fishbone, bmc, org });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `Anna_AI_Report${company.trim() ? "_" + company.trim().replace(/[\\/:*?"<>|\s]+/g, "_") : ""}.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      save(blob, fileName(company, "xlsx"));
+      setStatus("ดาวน์โหลดไฟล์ Excel แล้ว");
     } catch {
+      setStatus(null);
       setError("สร้างไฟล์ Excel ไม่สำเร็จ ลองกดอีกครั้ง");
     }
     setBusy(null);
@@ -52,14 +105,30 @@ export function ReportActions({ items, company, dateText }: { items: Item[]; com
 
   return (
     <div className="flex flex-wrap items-center gap-2 print:hidden">
-      <Button type="button" className="h-11 md:h-9" disabled={busy !== null} onClick={() => void pdf()}>
-        <Printer className="size-4" />
-        {busy === "pdf" ? "กำลังเตรียม…" : "ดาวน์โหลด PDF"}
+      <Button
+        type="button"
+        className="h-11 md:h-9"
+        disabled={busy !== null}
+        onClick={() => void pdf()}
+      >
+        <FileText className="size-4" />
+        {busy === "pdf" ? "กำลังสร้าง PDF…" : "ดาวน์โหลด PDF"}
       </Button>
-      <Button type="button" variant="outline" className="h-11 md:h-9" disabled={busy !== null} onClick={() => void xlsx()}>
+      <Button
+        type="button"
+        variant="outline"
+        className="h-11 md:h-9"
+        disabled={busy !== null}
+        onClick={() => void xlsx()}
+      >
         <FileSpreadsheet className="size-4" />
         {busy === "xlsx" ? "กำลังสร้างไฟล์…" : "ดาวน์โหลด Excel"}
       </Button>
+      {status && !error && (
+        <p className="basis-full text-sm text-muted-foreground" role="status">
+          {status}
+        </p>
+      )}
       {error && (
         <p className="basis-full text-sm text-destructive" role="alert">
           {error}
