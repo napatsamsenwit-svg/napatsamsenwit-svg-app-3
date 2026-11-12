@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ChevronLeft, ChevronRight, FileText, Printer, RotateCcw, Send, Sparkles, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileText, RotateCcw, Send, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { PlanProgress } from "@/components/plan-progress";
 import { StatusPill } from "@/components/status-pill";
@@ -30,6 +30,7 @@ import { cn } from "@/lib/utils";
 import { AiBar, CellAi } from "./ai-controls";
 import { BmcImage, OrgImage } from "./canvas-exports";
 import { FishboneDiagram } from "./fishbone-diagram";
+import { ReportActions } from "./report-actions";
 import { SectionBody } from "./section-body";
 
 export type SectionState = { data: SectionData; status: SectionStatus };
@@ -534,11 +535,12 @@ export function PlanEditor({
               "บันทึกอัตโนมัติ"
             )}
           </p>
-          <Button type="button" variant="outline" className="h-11" onClick={() => window.print()}>
-            <Printer className="size-4" />
-            <span className="hidden sm:inline">พิมพ์</span>
-            <span className="sr-only sm:hidden">พิมพ์</span>
-          </Button>
+          <ReportActions
+            compact
+            items={SECTIONS.map((sec) => ({ id: sec.id, data: sections[sec.id].data, status: sections[sec.id].status }))}
+            company={asText(sections.company?.data.name).trim()}
+            dateText={new Date().toLocaleDateString("th-TH", { year: "numeric", month: "long", day: "numeric" })}
+          />
           {!readOnly && cur.status === "review" && (
             <Button type="button" variant="outline" className="h-11" disabled={busy} onClick={() => void withdraw()}>
               <RotateCcw className="size-4" />

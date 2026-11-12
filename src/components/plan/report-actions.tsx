@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { FileSpreadsheet, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -33,22 +34,31 @@ export function ReportActions({
   items,
   company,
   dateText,
-  md,
-  json,
-  planId,
+  md = "",
+  json = "",
+  planId = "",
+  compact = false,
 }: {
-  planId: string;
+  planId?: string;
   items: Item[];
   company: string;
   dateText: string;
-  md: string;
-  json: string;
+  md?: string;
+  json?: string;
+  /** แถบล่างของหน้ากรอก: แสดงเฉพาะ PDF และ Excel (ข้อความสถานะขึ้นเป็นป้ายแจ้งแทน) */
+  compact?: boolean;
 }) {
   const router = useRouter();
   const [armed, setArmed] = useState(false);
   const [busy, setBusy] = useState<"pdf" | "xlsx" | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!compact) return;
+    if (error) toast.error(error, { id: "report-export" });
+    else if (status) (busy ? toast.loading : toast.success)(status, { id: "report-export" });
+  }, [compact, status, error, busy]);
 
   async function renderImages() {
     const byId = new Map(items.map((i) => [i.id, i]));
@@ -152,7 +162,8 @@ export function ReportActions({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2 print:hidden">
+    <div className={compact ? "flex items-center gap-2 print:hidden" : "flex flex-wrap items-center gap-2 print:hidden"}>
+      {!compact && <>
       <Button type="button" className="h-11 bg-gold font-semibold text-gold-foreground hover:bg-gold/90 md:h-10" onClick={() => void copy()}>
         คัดลอกข้อความ
       </Button>
@@ -162,6 +173,7 @@ export function ReportActions({
       <Button type="button" variant="outline" className="h-11 md:h-10" onClick={() => saveText(json, "json", "application/json;charset=utf-8")}>
         ดาวน์โหลด .json
       </Button>
+      </>}
       <Button
         type="button"
         variant="outline"
@@ -170,7 +182,7 @@ export function ReportActions({
         onClick={() => void pdf()}
       >
         <FileText className="size-4" />
-        {busy === "pdf" ? "กำลังสร้าง PDF…" : "ดาวน์โหลด PDF"}
+        {busy === "pdf" ? "กำลังสร้าง…" : compact ? "PDF" : "ดาวน์โหลด PDF"}
       </Button>
       <Button
         type="button"
@@ -180,22 +192,22 @@ export function ReportActions({
         onClick={() => void xlsx()}
       >
         <FileSpreadsheet className="size-4" />
-        {busy === "xlsx" ? "กำลังสร้างไฟล์…" : "ดาวน์โหลด Excel"}
+        {busy === "xlsx" ? "กำลังสร้าง…" : compact ? "Excel" : "ดาวน์โหลด Excel"}
       </Button>
-      <Button
+      {!compact && <Button
         type="button"
         variant="outline"
         className={armed ? "h-11 border-destructive bg-destructive/10 text-destructive md:h-10" : "h-11 md:h-10"}
         onClick={() => void clearAll()}
       >
         {armed ? "กดอีกครั้งเพื่อล้างทั้งหมด" : "ล้างข้อมูลทั้งหมด"}
-      </Button>
-      {status && !error && (
+      </Button>}
+      {!compact && status && !error && (
         <p className="basis-full text-sm text-muted-foreground" role="status">
           {status}
         </p>
       )}
-      {error && (
+      {!compact && error && (
         <p className="basis-full text-sm text-destructive" role="alert">
           {error}
         </p>
