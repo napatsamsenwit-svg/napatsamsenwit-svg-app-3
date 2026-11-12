@@ -3,9 +3,9 @@
 import { useEffect, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardCheck, FileText, LogOut, ShieldAlert } from "lucide-react";
+import { ClipboardCheck, FileText, LogOut, ShieldAlert, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { BrandLogo } from "@/components/brand-logo";
 import { brand } from "@/lib/brand";
@@ -88,6 +88,14 @@ export function AppShell({
                 <span className="hidden md:inline">รีเซ็ตเว็บ</span>
               </Button>
             )}
+            <Link
+              href="/security"
+              aria-label="ความปลอดภัยของบัญชี"
+              title="ความปลอดภัยของบัญชี"
+              className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "size-11 md:size-9")}
+            >
+              <ShieldCheck className="size-5" />
+            </Link>
             <ThemeToggle />
             <form action={logout}>
               <Button type="submit" variant="ghost" size="icon" className="size-11 md:size-9" aria-label="ออกจากระบบ">

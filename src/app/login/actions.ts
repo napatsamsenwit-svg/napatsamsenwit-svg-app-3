@@ -25,6 +25,24 @@ export async function login(_prev: AuthState, formData: FormData): Promise<AuthS
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword(credentials);
   if (error) return { error: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" };
+  // เปิด MFA ไว้: ต้องใส่รหัส 6 หลักจากแอปก่อน ถึงจะเข้าเว็บได้ (ยังไม่ตั้งคุกกี้ผ่านด่าน)
+  const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (aal?.nextLevel === "aal2" && aal.currentLevel !== "aal2") redirect("/login/mfa");
+  await markLive();
+  redirect("/");
+}
+
+export async function verifyMfa(_prev: AuthState, formData: FormData): Promise<AuthState> {
+  const code = String(formData.get("code") ?? "").replace(/\s/g, "");
+  if (!/^\d{6}$/.test(code)) return { error: "ใส่รหัส 6 หลักจากแอปยืนยันตัวตน" };
+
+  const supabase = await createClient();
+  const { data: factors } = await supabase.auth.mfa.listFactors();
+  const factor = factors?.totp.find((f) => f.status === "verified");
+  if (!factor) return { error: "หมดเวลาแล้ว กลับไปเข้าสู่ระบบใหม่อีกครั้ง" };
+
+  const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId: factor.id, code });
+  if (error) return { error: "รหัสไม่ถูกต้องหรือหมดอายุ ลองใหม่อีกครั้ง" };
   await markLive();
   redirect("/");
 }

@@ -13,7 +13,7 @@ async function currentEpoch(supabase: { rpc: (fn: string) => PromiseLike<{ data:
   return v;
 }
 
-const PUBLIC_PATHS = ["/login", "/opengraph-image", "/icon", "/apple-icon", "/manifest.webmanifest"];
+const PUBLIC_PATHS = ["/login", "/opengraph-image", "/icon", "/apple-icon", "/manifest.webmanifest", "/api/health"];
 
 export async function proxy(request: NextRequest) {
   if (!isSupabaseConfigured) return NextResponse.next();
