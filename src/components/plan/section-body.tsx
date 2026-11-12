@@ -7,6 +7,7 @@ import { asList, asRows, asText, type FieldValue, type Row, type SectionData } f
 import { cn } from "@/lib/utils";
 import { CompetencyPicker } from "./competency-picker";
 import { Control, ListField, MapField, TableField } from "./fields";
+import { FishboneCats } from "./fishbone-cats";
 import { KpiGrades, KpiImport, KpiWeights } from "./kpi-extras";
 
 /** ตำแหน่งของแต่ละช่องบนผัง Business Model Canvas (เดสก์ท็อป) */
@@ -136,17 +137,9 @@ export function SectionBody({ section, data, onChange, disabled, cellExtra, onMe
         <p className="text-sm text-muted-foreground">
           รูปแบบสาเหตุ: <b>หัวข้อ: รายละเอียด</b> เช่น &quot;ทีมขายและทีมจัดซื้อสื่อสารกันน้อย: ข้อมูลยอดขายไม่ถูกส่งต่อให้ทันวางแผนสั่งซื้อ&quot;
         </p>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {rest
-            .filter((f) => f.fb)
-            .map((f) => (
-              <div key={f.k} className="rounded-xl border bg-card p-3">
-                {renderField(f)}
-              </div>
-            ))}
-        </div>
+        <FishboneCats id={`${pre}-cats`} value={asRows(data.cats)} onChange={(v) => set("cats", v)} />
         <div className="grid gap-4">
-          {rest.filter((f) => !f.fb).map((f) => (
+          {rest.filter((f) => f.k !== "cats").map((f) => (
             <div key={f.k}>{renderField(f)}</div>
           ))}
         </div>

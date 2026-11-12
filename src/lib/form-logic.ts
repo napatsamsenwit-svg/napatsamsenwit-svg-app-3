@@ -15,6 +15,15 @@ export type SectionData = {
   _sample?: boolean;
 };
 
+const LEGACY_FISHBONE: [string, string][] = [
+  ["man", "คน (Man)"],
+  ["machine", "เครื่องมือและระบบ (Machine)"],
+  ["method", "วิธีการทำงาน (Method)"],
+  ["material", "สินค้าและวัตถุดิบ (Material)"],
+  ["measurement", "การวัดผล (Measurement)"],
+  ["environment", "สภาพแวดล้อม (Environment)"],
+];
+
 const str = (v: unknown) => (v == null ? "" : typeof v === "object" ? JSON.stringify(v) : String(v));
 
 export function normCell(c: Col | Field, v: unknown): string {
@@ -75,6 +84,13 @@ export function normalizeSection(s: Section, raw: unknown): SectionData {
     const v = src[f.k];
     d[f.k] = v === undefined ? emptyField(f) : normField(f, v);
   });
+  if (s.id === "fishbone" && !asRows(d.cats).length) {
+    // แผนเก่าที่เก็บเป็น 6 หมวดตายตัว: แปลงเป็นหมวดแบบใหม่
+    const old = LEGACY_FISHBONE.map(([k, name]) => ({ name, causes: normField({ k, label: name, type: "list" }, src[k]) as string[] }))
+      .filter((c) => c.causes.length)
+      .map((c) => ({ name: c.name, causes: c.causes.join("\n") }));
+    if (old.length) d.cats = old;
+  }
   if (typeof src._req === "string") d._req = src._req;
   if (src._act && typeof src._act === "object") d._act = src._act as Record<string, string>;
   if (src._sample === true) d._sample = true;
