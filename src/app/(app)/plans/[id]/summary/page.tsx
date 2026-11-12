@@ -7,8 +7,10 @@ import { ReportActions } from "@/components/plan/report-actions";
 import { SectionSummary } from "@/components/plan/section-summary";
 import { SECTIONS } from "@/lib/form-schema";
 import { normalizeSection } from "@/lib/form-logic";
+import { fullJson, fullMd } from "@/lib/export-md";
 import { requireUser } from "@/lib/plan";
 import { asStatus, STATUS_TEXT } from "@/lib/plan-status";
+import { StatusPill } from "@/components/status-pill";
 
 export default async function SummaryPage({ params }: PageProps<"/plans/[id]/summary">) {
   const { id } = await params;
@@ -30,25 +32,66 @@ export default async function SummaryPage({ params }: PageProps<"/plans/[id]/sum
   const company = typeof rawName === "string" ? rawName.trim() : "";
   const today = new Date().toLocaleDateString("th-TH", { year: "numeric", month: "long", day: "numeric" });
 
-  return (
-    <div className="mx-auto max-w-4xl space-y-6">
-      <div className="flex flex-wrap items-center gap-3 print:hidden">
-        <Link
-          href={`/plans/${id}`}
-          className="flex h-11 items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground md:h-9"
-        >
-          <ChevronLeft className="size-4" />
-          กลับไปกรอกแผน
-        </Link>
-        <div className="ml-auto">
-          <ReportActions
-            items={items.map((i) => ({ id: i.section.id, data: i.data, status: i.status }))}
-            company={company}
-            dateText={today}
-          />
-        </div>
-      </div>
+  const md = fullMd(
+    items.map((i) => ({ section: i.section, data: i.data, status: i.status })),
+    company,
+    today,
+  );
+  const json = fullJson(
+    items.map((i) => ({ section: i.section, data: i.data, status: i.status })),
+    new Date().toISOString(),
+  );
 
+  return (
+    <div className="mx-auto max-w-6xl space-y-6">
+      <Link
+        href={`/plans/${id}`}
+        className="flex h-11 w-fit items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground md:h-9 print:hidden"
+      >
+        <ChevronLeft className="size-4" />
+        กลับไปกรอกแผน
+      </Link>
+
+      <section className="space-y-6 rounded-[14px] border bg-card p-4 md:p-8 print:hidden">
+        <header className="space-y-1">
+          <p className="font-latin text-xs font-semibold tracking-[0.12em] text-ring uppercase dark:text-gold">ขั้นสุดท้าย</p>
+          <h1 className="text-2xl leading-tight font-bold">
+            สรุปและส่งออก <span className="font-latin ml-1.5 text-[15px] font-medium text-muted-foreground">Summary &amp; Export</span>
+          </h1>
+          <p className="max-w-[80ch] pt-1 text-[14.5px] text-muted-foreground">
+            ตรวจสถานะทุกหัวข้อ แล้วคัดลอกหรือดาวน์โหลดแผนธุรกิจทั้งฉบับ หัวข้อที่ยังไม่ยืนยันจะถูกระบุว่าเป็นฉบับร่าง
+          </p>
+        </header>
+
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {items.map((i) => (
+            <Link
+              key={i.section.id}
+              href={`/plans/${id}?s=${i.section.id}`}
+              className="flex min-h-14 items-center justify-between gap-3 rounded-[10px] border bg-card px-4 py-3 text-left transition-colors hover:border-ring"
+            >
+              <span className="min-w-0 text-[15px]">
+                {i.section.no}. {i.section.th}
+              </span>
+              {i.status !== "empty" && <StatusPill status={i.status} />}
+            </Link>
+          ))}
+        </div>
+
+        <ReportActions
+          items={items.map((i) => ({ id: i.section.id, data: i.data, status: i.status }))}
+          company={company}
+          dateText={today}
+          md={md}
+          json={json}
+        />
+
+        <pre className="max-h-[480px] overflow-auto rounded-[10px] bg-muted p-6 text-sm leading-relaxed whitespace-pre-wrap">{md}</pre>
+      </section>
+
+      <details className="rounded-[14px] border bg-card p-4 md:p-6 print:border-0 print:p-0">
+        <summary className="cursor-pointer text-[15px] font-semibold print:hidden">ดูตัวอย่างหน้ารีพอร์ต (ตรงกับไฟล์ PDF)</summary>
+        <div className="mt-6 space-y-6">
       <header className="space-y-4 border-b pb-6">
         <BrandLogo height={36} />
         <div className="space-y-1">
@@ -75,6 +118,8 @@ export default async function SummaryPage({ params }: PageProps<"/plans/[id]/sum
           <SectionSummary key={i.section.id} section={i.section} data={i.data} status={i.status} company={company} />
         ))}
       </div>
+      </div>
+      </details>
     </div>
   );
 }

@@ -8,12 +8,13 @@ import "./globals.css";
 const anuphan = Anuphan({
   variable: "--font-anuphan",
   subsets: ["thai", "latin"],
+  weight: ["300", "400", "500", "600", "700"],
 });
 
 const poppins = Poppins({
   variable: "--font-poppins",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "600"],
 });
 
 const geistMono = Geist_Mono({

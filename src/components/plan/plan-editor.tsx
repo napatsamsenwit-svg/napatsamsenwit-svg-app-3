@@ -307,7 +307,7 @@ export function PlanEditor({
   const cardText: Record<SectionStatus, string> = { ...STATUS_TEXT, filling: "กรอกแล้ว" };
 
   const navGrid = (
-    <nav aria-label="หัวข้อทั้ง 13" className="grid grid-cols-2 gap-2 md:grid-cols-4 lg:grid-cols-7">
+    <nav aria-label="หัวข้อทั้ง 13" className="grid grid-cols-2 gap-1.5 md:grid-cols-4 lg:grid-cols-7">
       {SECTIONS.map((s, i) => {
         const active = s.id === current.id;
         return (
@@ -317,25 +317,25 @@ export function PlanEditor({
             onClick={() => go(s.id)}
             aria-current={active ? "true" : undefined}
             className={cn(
-              "flex min-h-24 flex-col gap-1 rounded-xl border bg-card p-3 text-left transition-colors hover:bg-accent",
-              active && "border-b-4 border-primary bg-gold/40 hover:bg-gold/40",
+              "flex min-h-24 flex-col gap-1 rounded-lg border bg-card px-2.5 py-2 text-left transition-colors hover:border-ring",
+              active && "border-ring bg-accent shadow-[inset_0_-3px_0_var(--ring)]",
             )}
           >
             <span className="flex items-center justify-between gap-2">
-              <span className="text-sm font-semibold tabular-nums">{String(s.no).padStart(2, "0")}</span>
-              <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", cardPill[statuses[i]])}>
+              <span className="font-latin text-xs font-semibold tabular-nums text-ring dark:text-gold">{String(s.no).padStart(2, "0")}</span>
+              <span className={cn("rounded-full px-2 py-1 text-[11px] leading-none font-medium", cardPill[statuses[i]])}>
                 {cardText[statuses[i]]}
               </span>
             </span>
-            <span className={cn("text-sm leading-snug", active ? "font-semibold" : "font-medium")}>{s.th}</span>
-            <span className="text-xs leading-snug text-muted-foreground">{s.en}</span>
+            <span className={cn("text-sm leading-snug", active && "font-semibold")}>{s.th}</span>
+            <span className="font-latin text-[11px] leading-snug text-muted-foreground">{s.en}</span>
           </button>
         );
       })}
       {!readOnly && (
         <Link
           href={`/plans/${planId}/summary`}
-          className="flex min-h-24 flex-col gap-1 rounded-xl border bg-card p-3 text-left transition-colors hover:bg-accent"
+          className="flex min-h-24 flex-col gap-1 rounded-lg border bg-card px-2.5 py-2 text-left transition-colors hover:border-ring"
         >
           <FileText className="size-4" />
           <span className="text-sm leading-snug font-medium">สรุปและส่งออก</span>
@@ -349,32 +349,25 @@ export function PlanEditor({
     <div className="print:block">
       <div className="min-w-0 space-y-5 pb-20">
         <div className="space-y-3 print:hidden">
-          <div className="space-y-2 rounded-2xl bg-brand-surface px-5 py-5 text-brand-surface-foreground md:px-7 md:py-6">
-            <p className="text-xs font-semibold tracking-widest text-gold">ANNA HR · BUSINESS PLANNING</p>
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="min-w-0 flex-1 text-2xl leading-snug font-bold md:text-3xl">
-                AI-ANNA Business Blueprint (พิมพ์เขียวธุรกิจ)
-              </h1>
-              {!readOnly && (
-                <Link
-                  href={`/plans/${planId}/summary`}
-                  className="inline-flex h-11 items-center gap-2 rounded-lg bg-gold px-3 text-sm font-medium text-gold-foreground transition-opacity hover:opacity-90 md:h-9"
-                >
-                  <FileText className="size-4" />
-                  ดูสรุปทั้งแผน
-                </Link>
-              )}
+          <div className="relative -mt-6 left-1/2 w-screen -translate-x-1/2 bg-brand-surface px-4 py-5 text-brand-surface-foreground">
+            <div className="mx-auto flex max-w-6xl flex-wrap items-end justify-between gap-x-8 gap-y-4">
+              <div className="min-w-0 flex-1 basis-[420px]">
+                <p className="font-latin text-xs font-semibold tracking-[0.14em] text-gold uppercase">ANNA HR · BUSINESS PLANNING</p>
+                <h1 className="mt-1 mb-1 text-2xl leading-tight font-bold text-balance md:text-[32px]">
+                  AI-ANNA Business Blueprint (พิมพ์เขียวธุรกิจ)
+                </h1>
+                <p className="text-sm text-[#C9CDE0]">
+                  13 หัวข้อ ตั้งแต่ข้อมูลบริษัทจนถึงแผนพัฒนารายบุคคล · ข้อมูลบันทึกอัตโนมัติ · สิทธิ์ของคุณ:{" "}
+                  {readOnly ? "ดูแผนและตรวจ (ดูได้อย่างเดียว)" : "กรอกและส่งตรวจ"}
+                  {title ? ` · ${title}` : ""}
+                </p>
+              </div>
+              <div className="w-full min-w-0 md:w-[300px]">
+                <PlanProgress statuses={statuses} total={SECTIONS.length} onDark />
+              </div>
             </div>
-            <p className="text-sm leading-relaxed opacity-80">
-              13 หัวข้อ ตั้งแต่ข้อมูลบริษัทจนถึงแผนพัฒนารายบุคคล · ข้อมูลบันทึกอัตโนมัติ · สิทธิ์ของคุณ:{" "}
-              {readOnly ? "ดูแผนและตรวจ (ดูได้อย่างเดียว)" : "กรอกและส่งตรวจ"}
-              {title ? ` · ${title}` : ""}
-            </p>
           </div>
           <div className="print:hidden">{navGrid}</div>
-          <Card className="p-4">
-            <PlanProgress statuses={statuses} total={SECTIONS.length} />
-          </Card>
 
           {!readOnly && !anyFilled && (
             <Card className="flex flex-col items-center gap-3 p-6 text-center">

@@ -48,10 +48,10 @@ export function AppShell({
 
   return (
     <div className="flex min-h-full flex-1 flex-col">
-      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur print:hidden">
+      <header className="sticky top-0 z-40 border-b border-[#33407A] bg-brand-surface text-brand-surface-foreground print:hidden">
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-2 px-4 md:h-16 md:gap-6">
           <Link href="/" aria-label={`${brand.name} หน้าแรก`} className="flex shrink-0 items-center">
-            <BrandLogo height={30} priority />
+            <BrandLogo height={30} onDark priority />
           </Link>
           <nav className="flex gap-1" aria-label="เมนูหลัก">
             {items.map((item) => (
@@ -60,8 +60,8 @@ export function AppShell({
                 href={item.href}
                 aria-current={isActive(item) ? "page" : undefined}
                 className={cn(
-                  "flex h-11 items-center gap-2 rounded-lg px-3 text-sm text-muted-foreground transition-colors hover:bg-accent md:h-10",
-                  isActive(item) && "bg-accent font-medium text-accent-foreground",
+                  "flex h-11 items-center gap-2 rounded-lg px-3 text-sm text-[#C9CDE0] transition-colors hover:bg-white/10 hover:text-white md:h-10",
+                  isActive(item) && "bg-white/15 font-medium text-white",
                 )}
               >
                 <item.icon className="size-4" />
@@ -70,12 +70,12 @@ export function AppShell({
             ))}
           </nav>
           <div className="ml-auto flex items-center gap-1">
-            <span className="hidden max-w-48 truncate text-sm text-muted-foreground lg:inline">{email}</span>
+            <span className="hidden max-w-48 truncate text-sm text-[#C9CDE0] lg:inline">{email}</span>
             {isReviewer && (
               <Button
                 type="button"
                 variant="ghost"
-                className="h-11 gap-1.5 px-2 text-sm md:h-9"
+                className="h-11 gap-1.5 px-2 text-sm text-white hover:bg-white/10 hover:text-white md:h-9"
                 aria-label="รีเซ็ตเว็บ ให้ทุกคนล็อกอินใหม่"
                 title="รีเซ็ตเว็บ: ให้ทุกคนล็อกอินใหม่"
                 onClick={async () => {
@@ -92,13 +92,13 @@ export function AppShell({
               href="/security"
               aria-label="ความปลอดภัยของบัญชี"
               title="ความปลอดภัยของบัญชี"
-              className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "size-11 md:size-9")}
+              className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "size-11 text-white hover:bg-white/10 hover:text-white md:size-9")}
             >
               <ShieldCheck className="size-5" />
             </Link>
             <ThemeToggle />
             <form action={logout}>
-              <Button type="submit" variant="ghost" size="icon" className="size-11 md:size-9" aria-label="ออกจากระบบ">
+              <Button type="submit" variant="ghost" size="icon" className="size-11 text-white hover:bg-white/10 hover:text-white md:size-9" aria-label="ออกจากระบบ">
                 <LogOut className="size-5" />
               </Button>
             </form>

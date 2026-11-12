@@ -35,9 +35,6 @@ export default function LoginPage() {
   return (
     <main className="grid min-h-full flex-1 lg:grid-cols-[1.05fr_1fr]">
       <aside className="relative hidden flex-col justify-between overflow-hidden bg-brand-surface p-12 text-brand-surface-foreground lg:flex">
-        <div aria-hidden className="pointer-events-none absolute -top-24 -left-24 size-96 rounded-full bg-brand-violet/40 blur-3xl" />
-        <div aria-hidden className="pointer-events-none absolute right-[-6rem] bottom-[-6rem] size-[28rem] rounded-full bg-brand-cyan/25 blur-3xl" />
-        <div aria-hidden className="pointer-events-none absolute top-1/2 left-1/3 size-72 rounded-full bg-brand-blue/30 blur-3xl" />
 
         <div className="relative">
           <BrandLogo height={40} onDark priority />
@@ -45,7 +42,7 @@ export default function LoginPage() {
 
         <div className="relative max-w-lg space-y-8">
           <div className="space-y-3">
-            <h2 className="text-4xl leading-snug font-semibold">ระบบ HR AI ครบวงจร</h2>
+            <h2 className="text-4xl leading-snug font-bold">ระบบ HR AI ครบวงจร</h2>
             <p className="text-lg leading-relaxed opacity-80">
               ตั้งแต่วางแผนธุรกิจ โครงสร้างองค์กร ไปจนถึงประเมิน KPI และสมรรถนะ ลดงานเอกสาร ลดเวลา และได้ข้อมูลไปตัดสินใจจริง
             </p>
@@ -53,7 +50,7 @@ export default function LoginPage() {
           <ul className="space-y-4">
             {FEATURES.map(({ icon: Icon, title, text }) => (
               <li key={title} className="flex items-start gap-4">
-                <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/15">
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#1F3668] text-gold">
                   <Icon className="size-5" />
                 </span>
                 <span>

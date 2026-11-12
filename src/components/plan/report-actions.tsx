@@ -31,10 +31,14 @@ export function ReportActions({
   items,
   company,
   dateText,
+  md,
+  json,
 }: {
   items: Item[];
   company: string;
   dateText: string;
+  md: string;
+  json: string;
 }) {
   const [busy, setBusy] = useState<"pdf" | "xlsx" | null>(null);
   const [status, setStatus] = useState<string | null>(null);
@@ -83,6 +87,24 @@ export function ReportActions({
     setBusy(null);
   }
 
+  async function copy() {
+    setError(null);
+    try {
+      await navigator.clipboard.writeText(md);
+      setStatus("คัดลอกแล้ว");
+    } catch {
+      setStatus(null);
+      setError("คัดลอกไม่สำเร็จ ลองเลือกข้อความในกล่องด้านล่างแล้วกด Ctrl+C / ⌘C");
+    }
+  }
+
+  function saveText(text: string, ext: "md" | "json", type: string) {
+    setError(null);
+    const name = fileName(company, ext).replace("Anna_AI_Report", "Business_Plan");
+    save(new Blob([text], { type }), name);
+    setStatus(`บันทึก ${name} แล้ว`);
+  }
+
   async function xlsx() {
     setBusy("xlsx");
     setError(null);
@@ -105,9 +127,19 @@ export function ReportActions({
 
   return (
     <div className="flex flex-wrap items-center gap-2 print:hidden">
+      <Button type="button" className="h-11 bg-gold font-semibold text-gold-foreground hover:bg-gold/90 md:h-10" onClick={() => void copy()}>
+        คัดลอกข้อความ
+      </Button>
+      <Button type="button" variant="outline" className="h-11 md:h-10" onClick={() => saveText(md, "md", "text/markdown;charset=utf-8")}>
+        ดาวน์โหลด .md
+      </Button>
+      <Button type="button" variant="outline" className="h-11 md:h-10" onClick={() => saveText(json, "json", "application/json;charset=utf-8")}>
+        ดาวน์โหลด .json
+      </Button>
       <Button
         type="button"
-        className="h-11 md:h-9"
+        variant="outline"
+        className="h-11 md:h-10"
         disabled={busy !== null}
         onClick={() => void pdf()}
       >
@@ -117,7 +149,7 @@ export function ReportActions({
       <Button
         type="button"
         variant="outline"
-        className="h-11 md:h-9"
+        className="h-11 md:h-10"
         disabled={busy !== null}
         onClick={() => void xlsx()}
       >
