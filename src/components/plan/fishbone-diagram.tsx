@@ -24,7 +24,7 @@ const C = {
 };
 
 /** ฟอนต์สำรองของระบบ ใช้ตอนส่งออกรูป (รูป SVG ที่โหลดเป็นภาพใช้ฟอนต์ของหน้าเว็บไม่ได้) */
-const EXPORT_FONT = "'Noto Sans Thai', 'Thonburi', Tahoma, sans-serif";
+export const EXPORT_FONT = "'Noto Sans Thai', 'Thonburi', Tahoma, sans-serif";
 
 const xe = (s: string) =>
   String(s).replace(
@@ -39,7 +39,7 @@ const headOf = (t: string) => {
 
 type Built = { w: number; h: number; svg: string };
 
-function buildSvg(
+export function buildSvg(
   d: SectionData,
   detail: boolean,
   font: string,

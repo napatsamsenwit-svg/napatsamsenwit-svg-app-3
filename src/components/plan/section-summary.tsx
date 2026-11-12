@@ -2,10 +2,22 @@ import type { Field, Section } from "@/lib/form-schema";
 import { asList, asRows, asText, hasVal, type SectionData } from "@/lib/form-logic";
 import { actKey, deptGrades, gradeOf, kpiRows } from "@/lib/kpi";
 import { StatusPill } from "@/components/status-pill";
+import { ReportImage, type ImageKind } from "./report-images";
 import type { SectionStatus } from "@/lib/plan-status";
 
+const EMPTY = <span className="text-muted-foreground">—</span>;
+
+/** เทมเพลตรีพอร์ต: ทุกช่องแสดงเป็นหัวข้อคำถามเสมอ ช่องที่ยังไม่มีข้อมูลขึ้น — */
 function FieldView({ f, v }: { f: Field; v: unknown }) {
-  if (!hasVal(f, v)) return null;
+  if (f.type === "cmpEdits") return null;
+  if (!hasVal(f, v)) {
+    return (
+      <div className="space-y-0.5 print:break-inside-avoid">
+        <h4 className="text-sm font-medium text-muted-foreground">{f.label}</h4>
+        <p>{EMPTY}</p>
+      </div>
+    );
+  }
   if (f.type === "list") {
     return (
       <div className="space-y-1">
@@ -64,8 +76,18 @@ function FieldView({ f, v }: { f: Field; v: unknown }) {
 }
 
 /** แสดงหัวข้อหนึ่งแบบอ่านอย่างเดียว ใช้ในหน้าสรุปและตอนพิมพ์ */
-export function SectionSummary({ section, data, status }: { section: Section; data: SectionData; status: SectionStatus }) {
-  const filled = section.fields.some((f) => hasVal(f, data[f.k]));
+export function SectionSummary({
+  section,
+  data,
+  status,
+  company,
+}: {
+  section: Section;
+  data: SectionData;
+  status: SectionStatus;
+  company: string;
+}) {
+  const imageKind: ImageKind | null = section.id === "fishbone" || section.id === "bmc" || section.id === "org" ? section.id : null;
   const kpi = section.id === "kpis" ? kpiRows(asRows(data.rows)) : [];
   const act = data._act ?? {};
   const graded = kpi.filter((r) => (act[actKey(r)] ?? "").trim());
@@ -79,13 +101,13 @@ export function SectionSummary({ section, data, status }: { section: Section; da
         </h3>
         <StatusPill status={status} className="print:hidden" />
       </header>
-      {!filled ? (
-        <p className="text-sm text-muted-foreground">ยังไม่ได้กรอก</p>
-      ) : (
+      {(
         <div className="space-y-4">
+          <p className="text-sm text-muted-foreground print:hidden">{section.desc}</p>
           {section.fields.map((f) => (
             <FieldView key={f.k} f={f} v={data[f.k]} />
           ))}
+          {imageKind && <ReportImage kind={imageKind} data={data} company={company} />}
           {graded.length > 0 && (
             <div className="space-y-1">
               <h4 className="text-sm font-medium text-muted-foreground">ผลการประเมิน KPI</h4>

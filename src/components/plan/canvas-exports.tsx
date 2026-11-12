@@ -78,7 +78,7 @@ function save(name: string, blob: Blob) {
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
-const toBlob = (cv: HTMLCanvasElement) =>
+export const canvasToBlob = (cv: HTMLCanvasElement) =>
   new Promise<Blob>((res, rej) => cv.toBlob((b) => (b ? res(b) : rej(new Error("toBlob"))), "image/png"));
 
 const fileSafe = (s: string) => s.trim().replace(/[\\/:*?"<>|\s]+/g, "_");
@@ -255,7 +255,7 @@ function bmcPlan(cx: Ctx, f: Fonts, data: SectionData, fs: number, equal?: boole
   return { ws, hw, N, upH, botH, need: upH + G + botH };
 }
 
-async function bmcCanvas(data: SectionData, company: string) {
+export async function bmcCanvas(data: SectionData, company: string) {
   const f = await loadFonts(["400", "500", "700"]);
   const W = BMC_W;
   const H = BMC_H;
@@ -399,7 +399,7 @@ function orgTree(data: SectionData): OrgNode[] {
   );
 }
 
-async function orgCanvas(data: SectionData, company: string) {
+export async function orgCanvas(data: SectionData, company: string) {
   const tree = orgTree(data);
   if (!tree.length) return null;
   const f = await loadFonts(["400", "600", "700", "800"]);
@@ -607,7 +607,7 @@ function ImageCard({
         setBusy(false);
         return null;
       }
-      const blob = await toBlob(out.cv);
+      const blob = await canvasToBlob(out.cv);
       blobRef.current = blob;
       setUrl(URL.createObjectURL(blob));
       const over = out.over?.length ? ` · ข้อความยาวเกินช่อง ${out.over.join(", ")} บางบรรทัดอาจถูกตัด ควรย่อเนื้อหาช่องนั้น` : "";
