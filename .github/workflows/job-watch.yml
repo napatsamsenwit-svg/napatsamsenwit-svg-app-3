@@ -4,8 +4,13 @@ on:
     paths: [".job-watch/acadex-feed.json", ".job-watch/acadex-status.json"]
   schedule:
     - cron: "*/5 * * * *"
+    - cron: "0 1 * * *"
   workflow_dispatch:
     inputs:
+      daily:
+        description: "ส่งสรุปรายวัน + เตือนวันสำคัญ"
+        type: boolean
+        default: false
       test:
         description: "ส่งข้อความทดสอบเข้า LINE"
         type: boolean
@@ -31,6 +36,7 @@ jobs:
           LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
           LINE_TEST: ${{ inputs.test && '1' || '' }}
           LINE_DIGEST: ${{ inputs.digest && '1' || '' }}
+          LINE_DAILY: ${{ (inputs.daily || github.event.schedule == '0 1 * * *') && '1' || '' }}
       - name: บันทึกรายการที่เห็นแล้ว
         if: always()
         run: |

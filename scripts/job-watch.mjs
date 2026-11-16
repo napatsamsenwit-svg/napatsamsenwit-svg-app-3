@@ -1,21 +1,30 @@
 // เช็กงาน Work and Travel ใหม่ แล้วแจ้งเตือนทาง LINE
 // ใช้: node scripts/job-watch.mjs   (ต้องมี LINE_CHANNEL_ACCESS_TOKEN และ LINE_USER_ID ถ้าจะส่งจริง)
+// เกณฑ์ต่าง ๆ (รัฐ ค่าแรง รายชื่อเฝ้า วันสำคัญ) อยู่ใน job-watch.config.json
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 
-const STATE = ".job-watch/seen.json";
+const CFG = JSON.parse(readFileSync("job-watch.config.json", "utf8"));
+const STATE = process.env.STATE_FILE ?? ".job-watch/seen.json";
+const FEED = ".job-watch/acadex-feed.json";
+const FEED_STATUS = ".job-watch/acadex-status.json";
 const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36";
+const DAY = 24 * 3600 * 1000;
+
 const decode = (s) =>
   s.replace(/&#8211;/g, "–").replace(/&amp;/g, "&").replace(/&#038;/g, "&").replace(/&#8217;/g, "'").replace(/&nbsp;/g, " ").replace(/&quot;/g, '"').replace(/&#039;/g, "'");
 const clean = (s) => decode(s.replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim();
 
 async function get(url) {
-  const r = await fetch(url, { headers: { "user-agent": UA, accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "accept-language": "th-TH,th;q=0.9,en;q=0.8", "upgrade-insecure-requests": "1", "sec-fetch-dest": "document", "sec-fetch-mode": "navigate", "sec-fetch-site": "none" }, signal: AbortSignal.timeout(30000) });
+  const r = await fetch(url, {
+    headers: { "user-agent": UA, accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "accept-language": "th-TH,th;q=0.9,en;q=0.8", "upgrade-insecure-requests": "1", "sec-fetch-dest": "document", "sec-fetch-mode": "navigate", "sec-fetch-site": "none" },
+    signal: AbortSignal.timeout(30000),
+  });
   if (!r.ok) throw new Error(`${url} -> ${r.status}`);
   return r.text();
 }
 
-const FEED = ".job-watch/acadex-feed.json";
-const FEED_STATUS = ".job-watch/acadex-status.json";
+// ---------- ดึงงานจากแต่ละเว็บ ----------
+// งานทุกชิ้นมี: key, site, text, link, wageText, open(true/false), emp, city, seats(ถ้ามี)
 
 // ดึงจากเว็บ Acadex จริง (เว็บนี้บล็อกเซิร์ฟเวอร์ GitHub เลยให้เครื่อง Mac ดึงแล้วส่งไฟล์ขึ้นมา)
 async function acadexFetch() {
@@ -42,7 +51,10 @@ async function acadex() {
     if (!st.ok) throw new Error(st.error);
   }
   if (!existsSync(FEED)) throw new Error("ยังไม่มีไฟล์จากเครื่อง Mac (acadex-feed.json)");
-  return JSON.parse(readFileSync(FEED, "utf8"));
+  return JSON.parse(readFileSync(FEED, "utf8")).map((j) => {
+    const [first, rest = ""] = j.text.split("\n");
+    return { ...j, open: j.open ?? false, emp: first.replace(/\s*\(.*$/, "").split(",")[0], city: rest.split(",")[0].trim() };
+  });
 }
 
 async function ihappy() {
@@ -51,7 +63,7 @@ async function ihappy() {
   const jobs = [];
   const rowsAll = html.match(/<tr[\s\S]*?<\/tr>/g) ?? [];
   const yearOf = (row) => row.match(/class="column-5"[^>]*>([\s\S]*?)<\/td>/)?.[1]?.match(/20\d\d/)?.[0] ?? "";
-  const season = rowsAll.map(yearOf).filter(Boolean).sort().at(-1); // ปีล่าสุดในตาราง (ตอนนี้ 2027) ไม่นับแถวปีเก่า
+  const season = rowsAll.map(yearOf).filter(Boolean).sort().at(-1); // ปีล่าสุดในตาราง ไม่นับแถวปีเก่า
   for (const row of rowsAll) {
     if (yearOf(row) !== season) continue;
     const col = (n) => row.match(new RegExp(`class="column-${n}"[^>]*>([\\s\\S]*?)</td>`))?.[1];
@@ -69,6 +81,8 @@ async function ihappy() {
       site: "iHappy",
       wageText: wage,
       open: /available-1/i.test(col(1) ?? ""),
+      emp: company,
+      city,
       text: `${company} – ${position}\n${city}, ${state} · ${wage}${seats ? ` · ${seats}` : ""}`,
       link,
     });
@@ -84,54 +98,66 @@ async function newstep() {
   if (!r.ok) throw new Error(`New Step -> ${r.status}`);
   const list = (await r.json()).data ?? [];
   return list
-    .filter((e) => ["SUMMER", "ALL"].includes(e.seasonType) && e.isActive !== false && e.isDelete !== true && e.statusOfEmployers === "เปิดรับสมัคร")
+    .filter((e) => ["SUMMER", "ALL"].includes(e.seasonType) && e.isActive !== false && e.isDelete !== true)
     .map((e) => ({
       key: `newstep:${e.id}`,
       site: "New Step",
+      wageText: "",
+      open: e.statusOfEmployers === "เปิดรับสมัคร",
+      emp: String(e.name).trim(),
+      city: e.city?.name ?? "",
       text: `${String(e.name).trim()}\n${e.city?.name ?? ""}, ${e.state?.name ?? ""}${e.houseCost ? ` · ที่พัก${e.houseCost}` : ""}`,
       link: `https://newstepthailand.com/jobs/${e.slug}`,
     }));
 }
 
-// งานด่วน: รัฐ Alaska หรือค่าแรงสูงกว่า 18 ดอลลาร์ต่อชั่วโมง
+// ---------- เกณฑ์ความสำคัญ ----------
 const maxWage = (t) => Math.max(0, ...[...t.replace(/\(\s*OT[^)]*\)/gi, "").matchAll(/\$\s*(\d+(?:\.\d+)?)/g)].map((m) => +m[1]).filter((n) => n <= 100));
-// รายชื่อเฝ้าพิเศษ: นายจ้างที่เคยลงทุกปีและคุณสนใจ ถ้าโผล่ในเว็บไหนจะเด้งด่วน
-const WATCH = [
-  [/49th state brewing/, "49th State Brewing (Alaska $18)"],
-  [/talkeetna alaskan lodge/, "Talkeetna Alaskan Lodge (Alaska)"],
-  [/subway.*denali|denali.*subway/, "Subway Denali (Alaska)"],
-  [/lemongrass.*fairbanks|fairbanks.*lemongrass/, "Lemongrass Thai Fairbanks (Alaska)"],
-  [/aramark.*citi field|citi field/, "Aramark Citi Field (New York $21)"],
-  [/ghirardelli/, "Ghirardelli Chocolate (San Francisco $19)"],
-  [/rick's caf/, "Rick's Cafe Naples (Maine $19)"],
-  [/alaska juneau/, "Alaska Juneau Mining Company (Alaska)"],
-  [/seasalt/, "Seasalt (Seward, Alaska)"],
-  [/fairfield inn.*anchorage|anchorage.*fairfield inn/, "Fairfield Inn Anchorage (Alaska)"],
-  [/taco bell.*kalispell|kalispell.*taco bell/, "Taco Bell Kalispell (Montana $19)"],
-  [/hard rock hotel.*atlantic city|atlantic city.*hard rock hotel/, "Hard Rock Hotel Atlantic City ($19)"],
-];
-function urgentReasons(j) {
+const WATCH = CFG.watch.map((w) => [new RegExp(w.pattern), w.label]);
+
+function reasons(j) {
   const r = [];
-  const text = j.text.toLowerCase().replace(/[\u2018\u2019]/g, "'");
+  const text = j.text.toLowerCase().replace(/[‘’]/g, "'");
   for (const [re, label] of WATCH) if (re.test(text)) r.push(`⭐ เฝ้าพิเศษ: ${label}`);
-  if (/alaska/i.test(j.text)) r.push("รัฐ Alaska");
+  for (const s of CFG.favStates) if (text.includes(s.toLowerCase())) r.push(`รัฐ ${s[0].toUpperCase()}${s.slice(1)}`);
   const w = maxWage(j.wageText ?? "");
-  if (w > 18) r.push(`ค่าแรง $${w}/ชม.`);
+  if (w > CFG.minWageAbove) r.push(`ค่าแรง $${w}/ชม.`);
   return r;
 }
+const isFav = (j) => reasons(j).some((x) => !x.startsWith("⭐"));
+// ค่าแรงต่ำกว่าเกณฑ์ (และไม่ใช่งานสำคัญ) รวมเป็นก้อนเดียว ส่วนค่าแรงที่ไม่ทราบ (New Step) ถือว่าสำคัญพอจะเด้งเดี่ยว
+const isLowWage = (j) => {
+  const w = maxWage(j.wageText ?? "");
+  return w > 0 && w < CFG.batchBelowWage && !reasons(j).length;
+};
 
-async function pushLine(text) {
+const STOP = new Set(["the", "inc", "llc", "co", "company", "and", "at", "of", "hap"]);
+const toks = (s) => String(s ?? "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => w && !STOP.has(w));
+const empKey = (j) => {
+  const t = toks(j.emp).slice(0, 2).join(" "), c = toks(j.city)[0] ?? "";
+  return t && c ? `${t}|${c}` : "";
+};
+
+// ---------- ส่ง LINE ----------
+async function pushMany(texts) {
   const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
   const to = process.env.LINE_USER_ID;
-  if (!token || !to) { console.log("(ยังไม่ได้ตั้งค่า LINE แสดงข้อความแทน)\n" + text); return; }
-  const r = await fetch("https://api.line.me/v2/bot/message/push", {
-    method: "POST",
-    headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
-    body: JSON.stringify({ to, messages: [{ type: "text", text: text.slice(0, 4900) }] }),
-  });
-  if (!r.ok) throw new Error(`LINE ${r.status}: ${await r.text()}`);
+  for (let i = 0; i < texts.length; i += 5) {
+    const messages = texts.slice(i, i + 5).map((t) => ({ type: "text", text: t.slice(0, 4900) }));
+    if (!token || !to) { console.log("(ยังไม่ได้ตั้งค่า LINE แสดงข้อความแทน)\n" + messages.map((m) => m.text).join("\n-----\n")); continue; }
+    const r = await fetch("https://api.line.me/v2/bot/message/push", {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+      body: JSON.stringify({ to, messages }),
+    });
+    if (!r.ok) throw new Error(`LINE ${r.status}: ${await r.text()}`);
+  }
 }
+const pushLine = (t) => pushMany([t]);
 
+const fmt = (j) => `[${j.site}] ${j.text}${j.seats ? ` · เหลือ ${j.seats} ที่` : ""}\n${j.link}`;
+
+// ---------- โหมดดึงข้อมูล Acadex บน Mac ----------
 if (process.argv.includes("--fetch-acadex")) {
   mkdirSync(".job-watch", { recursive: true });
   const setStatus = (st) => {
@@ -150,75 +176,174 @@ if (process.argv.includes("--fetch-acadex")) {
   }
   process.exit(0);
 }
+
+// ---------- ดึงข้อมูลทุกเว็บ ----------
 const results = await Promise.allSettled([acadex(), ihappy(), newstep()]);
+const names = ["acadex", "ihappy", "newstep"];
+const okJobs = results.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
+
 if (process.env.LINE_DIGEST) {
-  const by = (site) => results.flatMap((r) => (r.status === "fulfilled" ? r.value : [])).filter((j) => j.site === site);
-  const isFav = (j) => urgentReasons(j).some((x) => !x.startsWith("⭐"));
   const part = (site) =>
-    by(site).filter((j) => j.open && isFav(j)).sort((a, b) => maxWage(b.wageText ?? "") - maxWage(a.wageText ?? "")).map((j) => `• ${j.text.replace("\n", " — ")}${j.seats ? ` · เหลือ ${j.seats} ที่` : ""}\n${j.link}`);
+    okJobs.filter((j) => j.site === site && j.open && isFav(j)).sort((a, b) => maxWage(b.wageText ?? "") - maxWage(a.wageText ?? "")).map((j) => `• ${j.text.replace("\n", " — ")}${j.seats ? ` · เหลือ ${j.seats} ที่` : ""}\n${j.link}`);
   const a = part("Acadex"), h = part("iHappy");
-  const waiting = WATCH.map(([, label]) => `• ${label}`).join("\n");
-  let msg = `⭐🚨 สรุปงานน่าสนใจ ณ ตอนนี้\n(Alaska หรือค่าแรงเกิน $18 และยังเปิดอยู่)\n\n[Acadex] ${a.length} งาน\n${a.join("\n\n") || "ไม่มี"}`;
-  await pushLine(msg);
-  await pushLine(`[iHappy] ${h.length} งาน\n${h.join("\n\n") || "ไม่มี"}`);
-  await pushLine(`👀 รายชื่อที่เฝ้ารอ (ยังไม่เปิดปีนี้ ถ้าโผล่จะเด้งทันที)\n\n${waiting}\n\nปกติ Aramark Citi Field ลงเดือน พ.ย. ทุกปี น่าจับตาที่สุด`);
+  await pushMany([
+    `⭐🚨 สรุปงานน่าสนใจ ณ ตอนนี้\n(Alaska หรือค่าแรงเกิน $${CFG.minWageAbove} และยังเปิดอยู่)\n\n[Acadex] ${a.length} งาน\n${a.join("\n\n") || "ไม่มี"}`,
+    `[iHappy] ${h.length} งาน\n${h.join("\n\n") || "ไม่มี"}`,
+    `👀 รายชื่อที่เฝ้ารอ (ถ้าโผล่จะเด้งทันที)\n\n${CFG.watch.map((w) => `• ${w.label}`).join("\n")}`,
+  ]);
   process.exit(0);
 }
+
 if (process.env.LINE_TEST) {
-  let m = "🧪 ตัวอย่างข้อความแจ้งเตือน (ทดสอบ ไม่ใช่งานใหม่จริง)\n\n🆕 มีงาน Work & Travel ใหม่";
-  for (const res of results) if (res.status === "fulfilled" && res.value[0]) m += `\n\n[${res.value[0].site}] ${res.value[0].text}\n${res.value[0].link}`;
-  await pushLine(m);
-  const all = results.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
-  const ex = all.find((j) => urgentReasons(j).length);
-  if (ex) await pushLine(`🧪 ตัวอย่างแบบด่วน\n🚨🚨 ด่วน! งานใหม่ (${urgentReasons(ex).join(" + ")}) 🚨🚨\n\n[${ex.site}] ${ex.text}\n${ex.link}`);
+  const sample = okJobs.filter((j) => j.open).slice(0, 3);
+  const fav = okJobs.find((j) => j.open && isFav(j));
+  await pushMany([
+    `🧪 ตัวอย่างข้อความแจ้งเตือน (ทดสอบ ไม่ใช่งานใหม่จริง)\n\n🆕 งานใหม่\n${sample.map(fmt).join("\n\n")}`,
+    ...(fav ? [`🧪 ตัวอย่างแบบสำคัญ\n🚨🚨 ด่วน! งานใหม่ (${reasons(fav).join(" + ")}) 🚨🚨\n\n${fmt(fav)}`] : []),
+  ]);
 }
-const state = existsSync(STATE) ? JSON.parse(readFileSync(STATE, "utf8")) : { seen: {}, seeded: {} };
-const fresh = [];
-const alerts = [];
-const names = ["acadex", "ihappy", "newstep"];
+
+// ---------- ความจำ (state) ----------
+const now = new Date().toISOString();
+let state = existsSync(STATE) ? JSON.parse(readFileSync(STATE, "utf8")) : {};
+if (!state.jobs) state = { jobs: {}, seeded: {}, blocked: state.blocked ?? {}, events: [], reminders: {} }; // ย้ายจากแบบเก่า: รอบนี้เก็บค่าเริ่มต้นเงียบ ๆ
+state.events ??= []; state.reminders ??= {}; state.blocked ??= {};
+
+const fresh = [], reopened = [], alerts = [];
 results.forEach((res, i) => {
   const name = names[i];
   if (res.status === "rejected" || res.value.length < 20) {
     const why = String(res.reason?.message ?? res.reason ?? `เจอแค่ ${res.value.length} งาน`);
     console.error(`${name}: อ่านไม่สำเร็จหรือหน้าเว็บเปลี่ยน`, why);
-    process.exitCode = 1; // ไม่แตะข้อมูลเดิม กันแจ้งเตือนซ้ำรอบหน้า
-    state.blocked ??= {};
+    process.exitCode = 1;
     if (!state.blocked[name]) { // แจ้งแค่ครั้งแรกที่พัง กันข้อความรัว
       state.blocked[name] = true;
       alerts.push(`⚠️ เช็กเว็บ ${name} ไม่ได้ (${why})${/40[13]|429/.test(why) ? "\nเว็บอาจบล็อกเราอยู่" : ""}`);
     }
     return;
   }
-  if (state.blocked?.[name]) { delete state.blocked[name]; alerts.push(`✅ เว็บ ${name} กลับมาเช็กได้ปกติแล้ว`); }
+  if (state.blocked[name]) { delete state.blocked[name]; alerts.push(`✅ เว็บ ${name} กลับมาเช็กได้ปกติแล้ว`); }
   const first = !state.seeded[name];
-  if (name === "newstep") { // งานที่เต็มแล้วถูกลบออกจากความจำ ถ้ากลับมาเปิดอีกครั้งจะแจ้งเตือน
-    const open = new Set(res.value.map((j) => j.key));
-    for (const k of Object.keys(state.seen)) if (k.startsWith("newstep:") && !open.has(k)) delete state.seen[k];
-  }
-  for (const j of res.value) {
-    if (state.seen[j.key]) continue;
-    state.seen[j.key] = new Date().toISOString();
-    if (!first) fresh.push(j);
+  // แถวที่รหัสซ้ำกัน (ตำแหน่งเดียวกันลงหลายแถว) รวมเป็นงานเดียว ถือว่าเปิดถ้ามีแถวใดแถวหนึ่งเปิด กันป้ายเปิด/เต็มสลับไปมา
+  const uniq = new Map();
+  for (const j of res.value) uniq.set(j.key, uniq.has(j.key) ? { ...uniq.get(j.key), open: uniq.get(j.key).open || j.open } : j);
+  for (const j of uniq.values()) {
+    const prev = state.jobs[j.key];
+    const meta = { t: j.text.split("\n")[0].slice(0, 90), l: j.link, f: isFav(j) ? 1 : 0, s: j.site };
+    if (!prev) {
+      state.jobs[j.key] = { ...meta, first: now, tracked: !first, open: j.open, fullAt: null, reopens: 0 };
+      if (!first) fresh.push(j);
+    } else {
+      Object.assign(prev, meta);
+      if (prev.open && !j.open) { prev.open = false; prev.fullAt = now; }
+      else if (!prev.open && j.open) { prev.open = true; prev.reopens++; prev.reopenedAt = now; reopened.push(j); state.events.push({ k: j.key, at: now }); }
+    }
   }
   state.seeded[name] = true;
   console.log(`${name}: ${res.value.length} งาน${first ? " (รอบแรก เก็บไว้เฉย ๆ ไม่แจ้งเตือน)" : ""}`);
 });
+state.events = state.events.slice(-200);
 
-for (const a of alerts) await pushLine(a);
-if (fresh.length) {
-  const urgent = fresh.filter((j) => urgentReasons(j).length);
-  for (const j of urgent) await pushLine(`🚨🚨 ด่วน! งานใหม่ (${urgentReasons(j).join(" + ")}) 🚨🚨\n\n[${j.site}] ${j.text}\n${j.link}`);
-  const rest = fresh.filter((j) => !urgentReasons(j).length);
-  if (rest.length) {
-  const header = `🆕 มีงาน Work & Travel ใหม่ ${rest.length} งาน`;
-  let msg = header;
-  for (const j of rest) {
-    const item = `\n\n[${j.site}] ${j.text}\n${j.link}`;
-    if ((msg + item).length > 4800) { await pushLine(msg); msg = "(ต่อ)"; }
-    msg += item;
-  }
-  await pushLine(msg);
+// ---------- แจ้งเตือนทันที ----------
+const outbox = [...alerts];
+
+// รวมงานของนายจ้างเดียวกันที่ลงหลายเว็บในรอบเดียวเป็นข้อความเดียว
+const groups = new Map();
+for (const j of fresh) {
+  const k = empKey(j) || j.key;
+  groups.set(k, [...(groups.get(k) ?? []), j]);
+}
+const otherSites = (g, k) =>
+  okJobs.filter((x) => empKey(x) === k && !g.some((y) => y.site === x.site)).map((x) => `ℹ️ นายจ้างนี้ลงที่ ${x.site} ด้วย (${x.open ? "เปิด" : "เต็ม"}${maxWage(x.wageText ?? "") ? ` $${maxWage(x.wageText ?? "")}` : ""})\n${x.link}`);
+
+let single = 0;
+const lowBatch = [];
+const flood = fresh.length > CFG.maxIndividualAlerts;
+if (flood) outbox.push(`⚠️ พบงานใหม่พร้อมกัน ${fresh.length} งาน (ผิดปกติ อาจเป็นเว็บเปลี่ยนรูปแบบ) ส่งเฉพาะงานสำคัญด้านล่าง`);
+for (const [k, g] of groups) {
+  const rs = [...new Set(g.flatMap(reasons))];
+  const sites = [...new Set(g.map((j) => j.site))].join(" + ");
+  if (rs.length) {
+    outbox.push(`🚨🚨 ด่วน! งานใหม่ (${rs.join(" + ")}) 🚨🚨\n\n${g.map(fmt).join("\n\n")}${otherSites(g, k).length ? `\n\n${otherSites(g, k).join("\n")}` : ""}`);
+    single++;
+  } else if (g.every(isLowWage) || flood) {
+    lowBatch.push(...g);
+  } else {
+    outbox.push(`🆕 งานใหม่ (${sites})\n\n${g.map(fmt).join("\n\n")}${otherSites(g, k).length ? `\n\n${otherSites(g, k).join("\n")}` : ""}`);
+    single++;
   }
 }
+if (lowBatch.length && !flood) {
+  let msg = `🆕 งานใหม่ค่าแรงต่ำกว่า $${CFG.batchBelowWage} รวม ${lowBatch.length} งาน`;
+  for (const j of lowBatch) {
+    const item = `\n\n${fmt(j)}`;
+    if ((msg + item).length > 4800) { outbox.push(msg); msg = "(ต่อ)"; }
+    msg += item;
+  }
+  outbox.push(msg);
+} else if (lowBatch.length && flood) {
+  outbox.push(`🆕 งานใหม่ที่ไม่ใช่งานสำคัญอีก ${lowBatch.length} งาน (ไม่ส่งรายละเอียด ดูในเว็บ)`);
+}
+
+// ที่ว่างหลุดกลับมา (งานที่เคยเต็มกลับมาเปิด เช่น มีคนถอนตัว)
+for (const j of reopened) {
+  const rs = reasons(j);
+  outbox.push(`${rs.length ? "🚨♻️ ที่ว่างหลุดกลับมา" : "♻️ ที่ว่างกลับมาเปิดอีกครั้ง"}${rs.length ? ` (${rs.join(" + ")}) ♻️🚨` : ""}\n\n${fmt(j)}`);
+}
+
+// ---------- สรุปรายวัน + เตือนวันสำคัญ (รันตอน 8 โมงเช้า) ----------
+if (process.env.LINE_DAILY) {
+  const ict = new Date(Date.now() + 7 * 3600e3);
+  const today = ict.toISOString().slice(0, 10);
+  const since = Date.now() - DAY;
+  const jobsAll = Object.values(state.jobs);
+  const newBy = (s) => jobsAll.filter((x) => x.s === s && x.tracked && Date.parse(x.first) > since).length;
+  const cnt = (s) => { const a = okJobs.filter((j) => j.site === s); return `${a.length} งาน เปิด ${a.filter((j) => j.open).length}`; };
+  const favOpen = okJobs.filter((j) => j.open && isFav(j)).sort((a, b) => maxWage(b.wageText ?? "") - maxWage(a.wageText ?? ""));
+
+  // ความเร็ว iHappy เทียบค่าเฉลี่ย 3 ปี
+  const order = ["09", "10", "11", "12", "01", "02", "03", "04", "05"];
+  const mm = today.slice(5, 7), dd = +today.slice(8, 10), idx = order.indexOf(mm);
+  let pace = "";
+  if (idx >= 0) {
+    const end = CFG.ihappyAvgCumulative[mm], prevEnd = idx ? CFG.ihappyAvgCumulative[order[idx - 1]] : 0;
+    const dim = new Date(+today.slice(0, 4), +mm, 0).getDate();
+    const avg = prevEnd + ((end - prevEnd) * dd) / dim;
+    const cur = okJobs.filter((j) => j.site === "iHappy").length;
+    pace = `\n📈 iHappy ปีนี้ ${cur} งาน เทียบค่าเฉลี่ย 3 ปี ณ วันนี้ ~${Math.round(avg)} งาน (${Math.round((cur / avg) * 100)}%)`;
+  }
+
+  // ความเร็วที่งานเต็ม (เฉพาะงานที่เราเห็นตั้งแต่เปิดและเห็นตอนเต็มจริง)
+  const done = jobsAll.filter((x) => x.tracked && x.fullAt);
+  const days = (x) => (Date.parse(x.fullAt) - Date.parse(x.first)) / DAY;
+  const avgD = (a) => (a.length ? (a.reduce((s, x) => s + days(x), 0) / a.length).toFixed(1) : null);
+  const favDone = done.filter((x) => x.f);
+  const speed = `\n⏱ ความเร็วที่งานเต็ม (เก็บตั้งแต่เริ่มระบบ): เต็มแล้ว ${done.length} งาน` +
+    (done.length ? ` เฉลี่ย ${avgD(done)} วัน` : "") +
+    (favDone.length ? ` | งานสำคัญ ${favDone.length} งาน เฉลี่ย ${avgD(favDone)} วัน` : "") +
+    `\n♻️ ที่ว่างหลุดกลับมา 7 วันที่ผ่านมา: ${state.events.filter((e) => Date.parse(e.at) > Date.now() - 7 * DAY).length} ครั้ง`;
+
+  const daily = [
+    `🌅 สรุปประจำวัน ${today}\n\n🆕 งานใหม่ใน 24 ชม.: Acadex ${newBy("Acadex")} | iHappy ${newBy("iHappy")} | New Step ${newBy("New Step")}\n📋 ตอนนี้: Acadex ${cnt("Acadex")} | iHappy ${cnt("iHappy")} | New Step ${cnt("New Step")}${pace}${speed}`,
+  ];
+  if (favOpen.length) {
+    daily.push(`⭐ งานสำคัญที่ยังเปิดอยู่ ${favOpen.length} งาน\n\n${favOpen.slice(0, 10).map((j) => fmt(j)).join("\n\n")}${favOpen.length > 10 ? `\n\n…และอีก ${favOpen.length - 10} งาน` : ""}`);
+  }
+  const due = [];
+  for (const d of CFG.deadlines) {
+    const left = Math.round((Date.parse(d.date) - Date.parse(today)) / DAY);
+    const id = `${d.date}:${left}`;
+    if ([3, 1, 0].includes(left) && !state.reminders[id]) {
+      state.reminders[id] = true;
+      due.push(`• ${left === 0 ? "วันนี้" : `อีก ${left} วัน`}: ${d.label} (${d.date})`);
+    }
+  }
+  if (due.length) daily.push(`⏰ เตือนวันสำคัญ\n\n${due.join("\n")}`);
+  outbox.push(...daily);
+}
+
+if (outbox.length) await pushMany(outbox);
+console.log(`ส่งแล้ว ${outbox.length} ข้อความ (งานใหม่ ${fresh.length}, ที่ว่างกลับมา ${reopened.length})`);
+
 mkdirSync(".job-watch", { recursive: true });
-writeFileSync(STATE, JSON.stringify(state, null, 1));
+writeFileSync(STATE, JSON.stringify(state));
