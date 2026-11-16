@@ -3,13 +3,13 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 
 const STATE = ".job-watch/seen.json";
-const UA = "Mozilla/5.0 (compatible; job-watch/1.0)";
+const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36";
 const decode = (s) =>
   s.replace(/&#8211;/g, "–").replace(/&amp;/g, "&").replace(/&#038;/g, "&").replace(/&#8217;/g, "'").replace(/&nbsp;/g, " ").replace(/&quot;/g, '"').replace(/&#039;/g, "'");
 const clean = (s) => decode(s.replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim();
 
 async function get(url) {
-  const r = await fetch(url, { headers: { "user-agent": UA }, signal: AbortSignal.timeout(30000) });
+  const r = await fetch(url, { headers: { "user-agent": UA, accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "accept-language": "th-TH,th;q=0.9,en;q=0.8", "upgrade-insecure-requests": "1", "sec-fetch-dest": "document", "sec-fetch-mode": "navigate", "sec-fetch-site": "none" }, signal: AbortSignal.timeout(30000) });
   if (!r.ok) throw new Error(`${url} -> ${r.status}`);
   return r.text();
 }
