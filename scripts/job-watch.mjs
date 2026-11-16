@@ -47,7 +47,11 @@ async function ihappy() {
   const url = "https://www.ihappyeducation.com/job-location-summer/";
   const html = await get(url);
   const jobs = [];
-  for (const row of html.match(/<tr[\s\S]*?<\/tr>/g) ?? []) {
+  const rowsAll = html.match(/<tr[\s\S]*?<\/tr>/g) ?? [];
+  const yearOf = (row) => row.match(/class="column-5"[^>]*>([\s\S]*?)<\/td>/)?.[1]?.match(/20\d\d/)?.[0] ?? "";
+  const season = rowsAll.map(yearOf).filter(Boolean).sort().at(-1); // ปีล่าสุดในตาราง (ตอนนี้ 2027) ไม่นับแถวปีเก่า
+  for (const row of rowsAll) {
+    if (yearOf(row) !== season) continue;
     const col = (n) => row.match(new RegExp(`class="column-${n}"[^>]*>([\\s\\S]*?)</td>`))?.[1];
     const company = clean(col(6) ?? "");
     if (!company) continue;
@@ -59,7 +63,7 @@ async function ihappy() {
     const wage = clean(col(10) ?? "");
     const link = row.match(/href="\s*([^"\s]+)\s*"/)?.[1] ?? url;
     jobs.push({
-      key: `ihappy:${company}|${city}|${state}|${position}`.toLowerCase(),
+      key: `ihappy:${season}:${company}|${city}|${state}|${position}`.toLowerCase(),
       site: "iHappy",
       wageText: wage,
       text: `${company} – ${position}\n${city}, ${state} · ${wage}${seats ? ` · ${seats}` : ""}`,
@@ -77,7 +81,7 @@ async function newstep() {
   if (!r.ok) throw new Error(`New Step -> ${r.status}`);
   const list = (await r.json()).data ?? [];
   return list
-    .filter((e) => ["SUMMER", "ALL"].includes(e.seasonType) && e.isActive !== false && e.isDelete !== true)
+    .filter((e) => ["SUMMER", "ALL"].includes(e.seasonType) && e.isActive !== false && e.isDelete !== true && e.statusOfEmployers === "เปิดรับสมัคร")
     .map((e) => ({
       key: `newstep:${e.id}`,
       site: "New Step",
@@ -88,8 +92,25 @@ async function newstep() {
 
 // งานด่วน: รัฐ Alaska หรือค่าแรงสูงกว่า 18 ดอลลาร์ต่อชั่วโมง
 const maxWage = (t) => Math.max(0, ...[...t.matchAll(/\$\s*(\d+(?:\.\d+)?)/g)].map((m) => +m[1]).filter((n) => n <= 100));
+// รายชื่อเฝ้าพิเศษ: นายจ้างที่เคยลงทุกปีและคุณสนใจ ถ้าโผล่ในเว็บไหนจะเด้งด่วน
+const WATCH = [
+  [/49th state brewing/, "49th State Brewing (Alaska $18)"],
+  [/talkeetna alaskan lodge/, "Talkeetna Alaskan Lodge (Alaska)"],
+  [/subway.*denali|denali.*subway/, "Subway Denali (Alaska)"],
+  [/lemongrass.*fairbanks|fairbanks.*lemongrass/, "Lemongrass Thai Fairbanks (Alaska)"],
+  [/aramark.*citi field|citi field/, "Aramark Citi Field (New York $21)"],
+  [/ghirardelli/, "Ghirardelli Chocolate (San Francisco $19)"],
+  [/rick's caf/, "Rick's Cafe Naples (Maine $19)"],
+  [/alaska juneau/, "Alaska Juneau Mining Company (Alaska)"],
+  [/seasalt/, "Seasalt (Seward, Alaska)"],
+  [/fairfield inn.*anchorage|anchorage.*fairfield inn/, "Fairfield Inn Anchorage (Alaska)"],
+  [/taco bell.*kalispell|kalispell.*taco bell/, "Taco Bell Kalispell (Montana $19)"],
+  [/hard rock hotel.*atlantic city|atlantic city.*hard rock hotel/, "Hard Rock Hotel Atlantic City ($19)"],
+];
 function urgentReasons(j) {
   const r = [];
+  const text = j.text.toLowerCase().replace(/[\u2018\u2019]/g, "'");
+  for (const [re, label] of WATCH) if (re.test(text)) r.push(`⭐ เฝ้าพิเศษ: ${label}`);
   if (/alaska/i.test(j.text)) r.push("รัฐ Alaska");
   const w = maxWage(j.wageText ?? "");
   if (w > 18) r.push(`ค่าแรง $${w}/ชม.`);
@@ -154,6 +175,10 @@ results.forEach((res, i) => {
   }
   if (state.blocked?.[name]) { delete state.blocked[name]; alerts.push(`✅ เว็บ ${name} กลับมาเช็กได้ปกติแล้ว`); }
   const first = !state.seeded[name];
+  if (name === "newstep") { // งานที่เต็มแล้วถูกลบออกจากความจำ ถ้ากลับมาเปิดอีกครั้งจะแจ้งเตือน
+    const open = new Set(res.value.map((j) => j.key));
+    for (const k of Object.keys(state.seen)) if (k.startsWith("newstep:") && !open.has(k)) delete state.seen[k];
+  }
   for (const j of res.value) {
     if (state.seen[j.key]) continue;
     state.seen[j.key] = new Date().toISOString();
