@@ -29,7 +29,9 @@ async function acadexFetch() {
     const place = clean(block.match(/bottom_listdetail_lo[^>]*>(.*?)<\/div>/s)?.[1] ?? "");
     const wage = clean(block.match(/program_prict">(.*?)<\/div>/s)?.[1] ?? "");
     const link = block.match(/href="(https:\/\/www\.acadexthailand\.com\/location\/[^"]+)"/)?.[1] ?? url;
-    jobs.push({ key: `acadex:${id}`, site: "Acadex", wageText: wage, text: `${decode(title)}\n${place} · ${wage}`, link });
+    const open = block.includes('program_top_available">Available');
+    const seats = block.match(/program_bot_available">([^<]*)</)?.[1]?.trim() ?? "";
+    jobs.push({ key: `acadex:${id}`, site: "Acadex", wageText: wage, open, seats, text: `${decode(title)}\n${place} · ${wage}`, link });
   }
   return jobs;
 }
@@ -66,6 +68,7 @@ async function ihappy() {
       key: `ihappy:${season}:${company}|${city}|${state}|${position}`.toLowerCase(),
       site: "iHappy",
       wageText: wage,
+      open: /available-1/i.test(col(1) ?? ""),
       text: `${company} – ${position}\n${city}, ${state} · ${wage}${seats ? ` · ${seats}` : ""}`,
       link,
     });
@@ -148,6 +151,19 @@ if (process.argv.includes("--fetch-acadex")) {
   process.exit(0);
 }
 const results = await Promise.allSettled([acadex(), ihappy(), newstep()]);
+if (process.env.LINE_DIGEST) {
+  const by = (site) => results.flatMap((r) => (r.status === "fulfilled" ? r.value : [])).filter((j) => j.site === site);
+  const isFav = (j) => urgentReasons(j).some((x) => !x.startsWith("⭐"));
+  const part = (site) =>
+    by(site).filter((j) => j.open && isFav(j)).sort((a, b) => maxWage(b.wageText ?? "") - maxWage(a.wageText ?? "")).map((j) => `• ${j.text.replace("\n", " — ")}${j.seats ? ` · เหลือ ${j.seats} ที่` : ""}\n${j.link}`);
+  const a = part("Acadex"), h = part("iHappy");
+  const waiting = WATCH.map(([, label]) => `• ${label}`).join("\n");
+  let msg = `⭐🚨 สรุปงานน่าสนใจ ณ ตอนนี้\n(Alaska หรือค่าแรงเกิน $18 และยังเปิดอยู่)\n\n[Acadex] ${a.length} งาน\n${a.join("\n\n") || "ไม่มี"}`;
+  await pushLine(msg);
+  await pushLine(`[iHappy] ${h.length} งาน\n${h.join("\n\n") || "ไม่มี"}`);
+  await pushLine(`👀 รายชื่อที่เฝ้ารอ (ยังไม่เปิดปีนี้ ถ้าโผล่จะเด้งทันที)\n\n${waiting}\n\nปกติ Aramark Citi Field ลงเดือน พ.ย. ทุกปี น่าจับตาที่สุด`);
+  process.exit(0);
+}
 if (process.env.LINE_TEST) {
   let m = "🧪 ตัวอย่างข้อความแจ้งเตือน (ทดสอบ ไม่ใช่งานใหม่จริง)\n\n🆕 มีงาน Work & Travel ใหม่";
   for (const res of results) if (res.status === "fulfilled" && res.value[0]) m += `\n\n[${res.value[0].site}] ${res.value[0].text}\n${res.value[0].link}`;
