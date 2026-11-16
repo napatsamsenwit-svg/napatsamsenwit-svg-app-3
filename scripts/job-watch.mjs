@@ -63,6 +63,23 @@ async function ihappy() {
   return jobs;
 }
 
+async function newstep() {
+  const r = await fetch("https://api.newstepthailand.com/api/v1/employers/find", {
+    headers: { "x-api-key": "byssczyjywbbnfsumuejahcuspzobsod", "user-agent": UA },
+    signal: AbortSignal.timeout(30000),
+  });
+  if (!r.ok) throw new Error(`New Step -> ${r.status}`);
+  const list = (await r.json()).data ?? [];
+  return list
+    .filter((e) => ["SUMMER", "ALL"].includes(e.seasonType) && e.isActive !== false && e.isDelete !== true)
+    .map((e) => ({
+      key: `newstep:${e.id}`,
+      site: "New Step",
+      text: `${String(e.name).trim()}\n${e.city?.name ?? ""}, ${e.state?.name ?? ""}${e.houseCost ? ` · ที่พัก${e.houseCost}` : ""}`,
+      link: `https://newstepthailand.com/jobs/${e.slug}`,
+    }));
+}
+
 async function pushLine(text) {
   const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
   const to = process.env.LINE_USER_ID;
@@ -84,10 +101,10 @@ if (process.argv.includes("--fetch-acadex")) {
   console.log(`acadex: ดึงได้ ${jobs.length} งาน`);
   process.exit(0);
 }
-const results = await Promise.allSettled([acadex(), ihappy()]);
+const results = await Promise.allSettled([acadex(), ihappy(), newstep()]);
 const state = existsSync(STATE) ? JSON.parse(readFileSync(STATE, "utf8")) : { seen: {}, seeded: {} };
 const fresh = [];
-const names = ["acadex", "ihappy"];
+const names = ["acadex", "ihappy", "newstep"];
 results.forEach((res, i) => {
   const name = names[i];
   if (res.status === "rejected" || res.value.length < 20) {
