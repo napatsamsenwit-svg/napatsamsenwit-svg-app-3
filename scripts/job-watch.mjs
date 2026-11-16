@@ -67,6 +67,7 @@ async function pushLine(text) {
   if (!r.ok) throw new Error(`LINE ${r.status}: ${await r.text()}`);
 }
 
+if (process.env.LINE_TEST) await pushLine("✅ ทดสอบสำเร็จ! ต่อไปถ้ามีงาน Work & Travel ใหม่ จะแจ้งเตือนที่นี่");
 const results = await Promise.allSettled([acadex(), ihappy()]);
 const state = existsSync(STATE) ? JSON.parse(readFileSync(STATE, "utf8")) : { seen: {}, seeded: {} };
 const fresh = [];

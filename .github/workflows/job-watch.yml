@@ -3,6 +3,11 @@ on:
   schedule:
     - cron: "*/15 * * * *"
   workflow_dispatch:
+    inputs:
+      test:
+        description: "ส่งข้อความทดสอบเข้า LINE"
+        type: boolean
+        default: false
 permissions:
   contents: write
 concurrency: job-watch
@@ -18,6 +23,7 @@ jobs:
         env:
           LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
           LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+          LINE_TEST: ${{ inputs.test && '1' || '' }}
       - name: บันทึกรายการที่เห็นแล้ว
         if: always()
         run: |
