@@ -1,0 +1,27 @@
+name: job-watch
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: job-watch
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/job-watch.mjs
+        env:
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+      - name: บันทึกรายการที่เห็นแล้ว
+        if: always()
+        run: |
+          git config user.name "job-watch"
+          git config user.email "job-watch@users.noreply.github.com"
+          git add .job-watch/seen.json
+          git diff --cached --quiet || (git commit -m "อัปเดตรายการงานที่เห็นแล้ว" && git pull --rebase && git push)
