@@ -29,7 +29,7 @@ async function acadexFetch() {
     const place = clean(block.match(/bottom_listdetail_lo[^>]*>(.*?)<\/div>/s)?.[1] ?? "");
     const wage = clean(block.match(/program_prict">(.*?)<\/div>/s)?.[1] ?? "");
     const link = block.match(/href="(https:\/\/www\.acadexthailand\.com\/location\/[^"]+)"/)?.[1] ?? url;
-    jobs.push({ key: `acadex:${id}`, site: "Acadex", text: `${decode(title)}\n${place} · ${wage}`, link });
+    jobs.push({ key: `acadex:${id}`, site: "Acadex", wageText: wage, text: `${decode(title)}\n${place} · ${wage}`, link });
   }
   return jobs;
 }
@@ -61,6 +61,7 @@ async function ihappy() {
     jobs.push({
       key: `ihappy:${company}|${city}|${state}|${position}`.toLowerCase(),
       site: "iHappy",
+      wageText: wage,
       text: `${company} – ${position}\n${city}, ${state} · ${wage}${seats ? ` · ${seats}` : ""}`,
       link,
     });
@@ -83,6 +84,16 @@ async function newstep() {
       text: `${String(e.name).trim()}\n${e.city?.name ?? ""}, ${e.state?.name ?? ""}${e.houseCost ? ` · ที่พัก${e.houseCost}` : ""}`,
       link: `https://newstepthailand.com/jobs/${e.slug}`,
     }));
+}
+
+// งานด่วน: รัฐ Alaska หรือค่าแรงสูงกว่า 18 ดอลลาร์ต่อชั่วโมง
+const maxWage = (t) => Math.max(0, ...[...t.matchAll(/\$\s*(\d+(?:\.\d+)?)/g)].map((m) => +m[1]).filter((n) => n <= 100));
+function urgentReasons(j) {
+  const r = [];
+  if (/alaska/i.test(j.text)) r.push("รัฐ Alaska");
+  const w = maxWage(j.wageText ?? "");
+  if (w > 18) r.push(`ค่าแรง $${w}/ชม.`);
+  return r;
 }
 
 async function pushLine(text) {
@@ -120,6 +131,9 @@ if (process.env.LINE_TEST) {
   let m = "🧪 ตัวอย่างข้อความแจ้งเตือน (ทดสอบ ไม่ใช่งานใหม่จริง)\n\n🆕 มีงาน Work & Travel ใหม่";
   for (const res of results) if (res.status === "fulfilled" && res.value[0]) m += `\n\n[${res.value[0].site}] ${res.value[0].text}\n${res.value[0].link}`;
   await pushLine(m);
+  const all = results.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
+  const ex = all.find((j) => urgentReasons(j).length);
+  if (ex) await pushLine(`🧪 ตัวอย่างแบบด่วน\n🚨🚨 ด่วน! งานใหม่ (${urgentReasons(ex).join(" + ")}) 🚨🚨\n\n[${ex.site}] ${ex.text}\n${ex.link}`);
 }
 const state = existsSync(STATE) ? JSON.parse(readFileSync(STATE, "utf8")) : { seen: {}, seeded: {} };
 const fresh = [];
@@ -151,14 +165,19 @@ results.forEach((res, i) => {
 
 for (const a of alerts) await pushLine(a);
 if (fresh.length) {
-  const header = `🆕 มีงาน Work & Travel ใหม่ ${fresh.length} งาน`;
+  const urgent = fresh.filter((j) => urgentReasons(j).length);
+  for (const j of urgent) await pushLine(`🚨🚨 ด่วน! งานใหม่ (${urgentReasons(j).join(" + ")}) 🚨🚨\n\n[${j.site}] ${j.text}\n${j.link}`);
+  const rest = fresh.filter((j) => !urgentReasons(j).length);
+  if (rest.length) {
+  const header = `🆕 มีงาน Work & Travel ใหม่ ${rest.length} งาน`;
   let msg = header;
-  for (const j of fresh) {
+  for (const j of rest) {
     const item = `\n\n[${j.site}] ${j.text}\n${j.link}`;
     if ((msg + item).length > 4800) { await pushLine(msg); msg = "(ต่อ)"; }
     msg += item;
   }
   await pushLine(msg);
+  }
 }
 mkdirSync(".job-watch", { recursive: true });
 writeFileSync(STATE, JSON.stringify(state, null, 1));
