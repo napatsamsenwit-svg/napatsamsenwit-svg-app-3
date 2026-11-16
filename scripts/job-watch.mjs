@@ -94,7 +94,7 @@ async function newstep() {
 }
 
 // งานด่วน: รัฐ Alaska หรือค่าแรงสูงกว่า 18 ดอลลาร์ต่อชั่วโมง
-const maxWage = (t) => Math.max(0, ...[...t.matchAll(/\$\s*(\d+(?:\.\d+)?)/g)].map((m) => +m[1]).filter((n) => n <= 100));
+const maxWage = (t) => Math.max(0, ...[...t.replace(/\(\s*OT[^)]*\)/gi, "").matchAll(/\$\s*(\d+(?:\.\d+)?)/g)].map((m) => +m[1]).filter((n) => n <= 100));
 // รายชื่อเฝ้าพิเศษ: นายจ้างที่เคยลงทุกปีและคุณสนใจ ถ้าโผล่ในเว็บไหนจะเด้งด่วน
 const WATCH = [
   [/49th state brewing/, "49th State Brewing (Alaska $18)"],
