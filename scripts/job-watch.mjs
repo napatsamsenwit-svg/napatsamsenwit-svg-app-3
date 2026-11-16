@@ -92,7 +92,6 @@ async function pushLine(text) {
   if (!r.ok) throw new Error(`LINE ${r.status}: ${await r.text()}`);
 }
 
-if (process.env.LINE_TEST) await pushLine("✅ ทดสอบสำเร็จ! ต่อไปถ้ามีงาน Work & Travel ใหม่ จะแจ้งเตือนที่นี่");
 if (process.argv.includes("--fetch-acadex")) {
   const jobs = await acadexFetch();
   if (jobs.length < 20) throw new Error(`Acadex เจอแค่ ${jobs.length} งาน`);
@@ -102,6 +101,11 @@ if (process.argv.includes("--fetch-acadex")) {
   process.exit(0);
 }
 const results = await Promise.allSettled([acadex(), ihappy(), newstep()]);
+if (process.env.LINE_TEST) {
+  let m = "🧪 ตัวอย่างข้อความแจ้งเตือน (ทดสอบ ไม่ใช่งานใหม่จริง)\n\n🆕 มีงาน Work & Travel ใหม่";
+  for (const res of results) if (res.status === "fulfilled" && res.value[0]) m += `\n\n[${res.value[0].site}] ${res.value[0].text}\n${res.value[0].link}`;
+  await pushLine(m);
+}
 const state = existsSync(STATE) ? JSON.parse(readFileSync(STATE, "utf8")) : { seen: {}, seeded: {} };
 const fresh = [];
 const names = ["acadex", "ihappy", "newstep"];
