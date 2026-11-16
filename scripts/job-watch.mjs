@@ -14,7 +14,10 @@ async function get(url) {
   return r.text();
 }
 
-async function acadex() {
+const FEED = ".job-watch/acadex-feed.json";
+
+// ดึงจากเว็บ Acadex จริง (เว็บนี้บล็อกเซิร์ฟเวอร์ GitHub เลยให้เครื่อง Mac ดึงแล้วส่งไฟล์ขึ้นมา)
+async function acadexFetch() {
   const url = "https://www.acadexthailand.com/program/work-and-travel-summer/";
   const html = await get(url);
   const jobs = [];
@@ -28,6 +31,11 @@ async function acadex() {
     jobs.push({ key: `acadex:${id}`, site: "Acadex", text: `${decode(title)}\n${place} · ${wage}`, link });
   }
   return jobs;
+}
+
+async function acadex() {
+  if (!existsSync(FEED)) throw new Error("ยังไม่มีไฟล์จากเครื่อง Mac (acadex-feed.json)");
+  return JSON.parse(readFileSync(FEED, "utf8"));
 }
 
 async function ihappy() {
@@ -68,6 +76,14 @@ async function pushLine(text) {
 }
 
 if (process.env.LINE_TEST) await pushLine("✅ ทดสอบสำเร็จ! ต่อไปถ้ามีงาน Work & Travel ใหม่ จะแจ้งเตือนที่นี่");
+if (process.argv.includes("--fetch-acadex")) {
+  const jobs = await acadexFetch();
+  if (jobs.length < 20) throw new Error(`Acadex เจอแค่ ${jobs.length} งาน`);
+  mkdirSync(".job-watch", { recursive: true });
+  writeFileSync(FEED, JSON.stringify(jobs));
+  console.log(`acadex: ดึงได้ ${jobs.length} งาน`);
+  process.exit(0);
+}
 const results = await Promise.allSettled([acadex(), ihappy()]);
 const state = existsSync(STATE) ? JSON.parse(readFileSync(STATE, "utf8")) : { seen: {}, seeded: {} };
 const fresh = [];
