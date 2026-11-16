@@ -15,6 +15,7 @@ async function get(url) {
 }
 
 const FEED = ".job-watch/acadex-feed.json";
+const FEED_STATUS = ".job-watch/acadex-status.json";
 
 // ดึงจากเว็บ Acadex จริง (เว็บนี้บล็อกเซิร์ฟเวอร์ GitHub เลยให้เครื่อง Mac ดึงแล้วส่งไฟล์ขึ้นมา)
 async function acadexFetch() {
@@ -34,6 +35,10 @@ async function acadexFetch() {
 }
 
 async function acadex() {
+  if (existsSync(FEED_STATUS)) {
+    const st = JSON.parse(readFileSync(FEED_STATUS, "utf8"));
+    if (!st.ok) throw new Error(st.error);
+  }
   if (!existsSync(FEED)) throw new Error("ยังไม่มีไฟล์จากเครื่อง Mac (acadex-feed.json)");
   return JSON.parse(readFileSync(FEED, "utf8"));
 }
@@ -93,11 +98,21 @@ async function pushLine(text) {
 }
 
 if (process.argv.includes("--fetch-acadex")) {
-  const jobs = await acadexFetch();
-  if (jobs.length < 20) throw new Error(`Acadex เจอแค่ ${jobs.length} งาน`);
   mkdirSync(".job-watch", { recursive: true });
-  writeFileSync(FEED, JSON.stringify(jobs));
-  console.log(`acadex: ดึงได้ ${jobs.length} งาน`);
+  const setStatus = (st) => {
+    const text = JSON.stringify(st);
+    if (!existsSync(FEED_STATUS) || readFileSync(FEED_STATUS, "utf8") !== text) writeFileSync(FEED_STATUS, text);
+  };
+  try {
+    const jobs = await acadexFetch();
+    if (jobs.length < 20) throw new Error(`เจอแค่ ${jobs.length} งาน หน้าเว็บอาจเปลี่ยน`);
+    writeFileSync(FEED, JSON.stringify(jobs));
+    setStatus({ ok: true });
+    console.log(`acadex: ดึงได้ ${jobs.length} งาน`);
+  } catch (e) {
+    setStatus({ ok: false, error: String(e.message ?? e) });
+    console.error("acadex ล้มเหลว:", e.message ?? e);
+  }
   process.exit(0);
 }
 const results = await Promise.allSettled([acadex(), ihappy(), newstep()]);
@@ -108,14 +123,22 @@ if (process.env.LINE_TEST) {
 }
 const state = existsSync(STATE) ? JSON.parse(readFileSync(STATE, "utf8")) : { seen: {}, seeded: {} };
 const fresh = [];
+const alerts = [];
 const names = ["acadex", "ihappy", "newstep"];
 results.forEach((res, i) => {
   const name = names[i];
   if (res.status === "rejected" || res.value.length < 20) {
-    console.error(`${name}: อ่านไม่สำเร็จหรือหน้าเว็บเปลี่ยน`, res.reason ?? `เจอแค่ ${res.value.length} งาน`);
+    const why = String(res.reason?.message ?? res.reason ?? `เจอแค่ ${res.value.length} งาน`);
+    console.error(`${name}: อ่านไม่สำเร็จหรือหน้าเว็บเปลี่ยน`, why);
     process.exitCode = 1; // ไม่แตะข้อมูลเดิม กันแจ้งเตือนซ้ำรอบหน้า
+    state.blocked ??= {};
+    if (!state.blocked[name]) { // แจ้งแค่ครั้งแรกที่พัง กันข้อความรัว
+      state.blocked[name] = true;
+      alerts.push(`⚠️ เช็กเว็บ ${name} ไม่ได้ (${why})${/40[13]|429/.test(why) ? "\nเว็บอาจบล็อกเราอยู่" : ""}`);
+    }
     return;
   }
+  if (state.blocked?.[name]) { delete state.blocked[name]; alerts.push(`✅ เว็บ ${name} กลับมาเช็กได้ปกติแล้ว`); }
   const first = !state.seeded[name];
   for (const j of res.value) {
     if (state.seen[j.key]) continue;
@@ -126,6 +149,7 @@ results.forEach((res, i) => {
   console.log(`${name}: ${res.value.length} งาน${first ? " (รอบแรก เก็บไว้เฉย ๆ ไม่แจ้งเตือน)" : ""}`);
 });
 
+for (const a of alerts) await pushLine(a);
 if (fresh.length) {
   const header = `🆕 มีงาน Work & Travel ใหม่ ${fresh.length} งาน`;
   let msg = header;

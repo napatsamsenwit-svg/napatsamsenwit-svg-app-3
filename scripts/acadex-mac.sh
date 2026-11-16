@@ -3,7 +3,7 @@
 export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
 cd "$(dirname "$0")/.." || exit 1
 git pull -q --rebase --autostash || exit 1
-node scripts/job-watch.mjs --fetch-acadex || exit 1
-git add .job-watch/acadex-feed.json
+node scripts/job-watch.mjs --fetch-acadex
+git add .job-watch/acadex-feed.json .job-watch/acadex-status.json
 git diff --cached --quiet && exit 0
 git commit -qm "อัปเดตรายการงาน Acadex" && git push -q

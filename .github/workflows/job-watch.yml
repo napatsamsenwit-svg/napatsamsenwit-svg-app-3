@@ -1,9 +1,9 @@
 name: job-watch
 on:
   push:
-    paths: [".job-watch/acadex-feed.json"]
+    paths: [".job-watch/acadex-feed.json", ".job-watch/acadex-status.json"]
   schedule:
-    - cron: "*/15 * * * *"
+    - cron: "*/5 * * * *"
   workflow_dispatch:
     inputs:
       test:
