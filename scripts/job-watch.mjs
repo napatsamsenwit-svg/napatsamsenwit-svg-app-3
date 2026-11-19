@@ -155,6 +155,36 @@ async function pushMany(texts) {
 }
 const pushLine = (t) => pushMany([t]);
 
+// ส่งถึงเพื่อนทุกคนที่แอดบอท (ใช้กับแจ้งงานใหม่) ถ้าส่งไม่ได้ (เช่น โควตาเต็ม) ส่งเข้าบัญชีเจ้าของแทน จะได้ไม่พลาดและไม่วนส่งซ้ำ
+async function broadcastMany(texts) {
+  const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+  if (!token) return pushMany(texts);
+  for (let i = 0; i < texts.length; i += 5) {
+    const chunk = texts.slice(i, i + 5);
+    const r = await fetch("https://api.line.me/v2/bot/message/broadcast", {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+      body: JSON.stringify({ messages: chunk.map((t) => ({ type: "text", text: t.slice(0, 4900) })) }),
+    });
+    if (!r.ok) {
+      const why = `LINE ${r.status}: ${(await r.text()).slice(0, 120)}`;
+      console.error("broadcast ล้มเหลว:", why);
+      await pushMany([`⚠️ ส่งถึงเพื่อนทุกคนไม่สำเร็จ (${why}) ส่งเข้าบัญชีคุณคนเดียวแทน`, ...texts.slice(i)]);
+      return;
+    }
+  }
+}
+async function lineQuota() {
+  const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+  if (!token) return null;
+  try {
+    const H = { authorization: `Bearer ${token}` };
+    const q = await (await fetch("https://api.line.me/v2/bot/message/quota", { headers: H })).json();
+    const u = await (await fetch("https://api.line.me/v2/bot/message/quota/consumption", { headers: H })).json();
+    return typeof u.totalUsage === "number" ? { limit: q.type === "limited" ? q.value : null, used: u.totalUsage } : null;
+  } catch { return null; }
+}
+
 const fmt = (j) => `[${j.site}] ${j.text}${j.seats ? ` · เหลือ ${j.seats} ที่` : ""}\n${j.link}`;
 
 // ---------- โหมดดึงข้อมูล Acadex บน Mac ----------
@@ -231,7 +261,7 @@ let state = existsSync(STATE) ? JSON.parse(readFileSync(STATE, "utf8")) : {};
 if (!state.jobs) state = { jobs: {}, seeded: {}, blocked: state.blocked ?? {}, events: [], reminders: {} }; // ย้ายจากแบบเก่า: รอบนี้เก็บค่าเริ่มต้นเงียบ ๆ
 state.events ??= []; state.reminders ??= {}; state.blocked ??= {}; state.failN ??= {}; state.posts ??= {};
 
-const fresh = [], reopened = [], alerts = [];
+const fresh = [], reopened = [], alerts = [], pub = []; // alerts = ข้อความระบบ (ถึงเจ้าของคนเดียว), pub = แจ้งงาน (ถึงเพื่อนทุกคน)
 results.forEach((res, i) => {
   const name = names[i];
   if (res.status === "rejected" || res.value.length < 20) {
@@ -278,9 +308,9 @@ if (posts) {
     const entries = [...byT];
     for (const [title, ps] of entries.slice(0, 8)) {
       const rs = reasons({ text: title.replace(/\//g, ", "), wageText: "" });
-      alerts.push(`${rs.length ? `🚨🚨 ด่วน! iHappy เพิ่งโพสต์ (${rs.join(" + ")}) 🚨🚨` : "📝 iHappy เพิ่งโพสต์งานใหม่"}\n(ตารางงานอาจยังไม่อัปเดต รอสักพัก)\n\n${title}${ps.length > 1 ? ` · ${ps.length} ตำแหน่ง` : ""}\n${ps[0].link}`);
+      pub.push(`${rs.length ? `🚨🚨 ด่วน! iHappy เพิ่งโพสต์ (${rs.join(" + ")}) 🚨🚨` : "📝 iHappy เพิ่งโพสต์งานใหม่"}\n(ตารางงานอาจยังไม่อัปเดต รอสักพัก)\n\n${title}${ps.length > 1 ? ` · ${ps.length} ตำแหน่ง` : ""}\n${ps[0].link}`);
     }
-    if (entries.length > 8) alerts.push(`📝 iHappy โพสต์งานใหม่อีก ${entries.length - 8} รายการ ดูในเว็บ`);
+    if (entries.length > 8) pub.push(`📝 iHappy โพสต์งานใหม่อีก ${entries.length - 8} รายการ ดูในเว็บ`);
   }
 }
 
@@ -317,12 +347,12 @@ for (const [k, g] of groups) {
   const rs = [...new Set(g.flatMap(reasons))];
   const sites = [...new Set(g.map((j) => j.site))].join(" + ");
   if (rs.length) {
-    outbox.push(`🚨🚨 ด่วน! งานใหม่ (${rs.join(" + ")}) 🚨🚨\n\n${g.map(fmt).join("\n\n")}${otherSites(g, k).length ? `\n\n${otherSites(g, k).join("\n")}` : ""}`);
+    pub.push(`🚨🚨 ด่วน! งานใหม่ (${rs.join(" + ")}) 🚨🚨\n\n${g.map(fmt).join("\n\n")}${otherSites(g, k).length ? `\n\n${otherSites(g, k).join("\n")}` : ""}`);
     single++;
   } else if (g.every(isLowWage) || flood) {
     lowBatch.push(...g);
   } else {
-    outbox.push(`🆕 งานใหม่ (${sites})\n\n${g.map(fmt).join("\n\n")}${otherSites(g, k).length ? `\n\n${otherSites(g, k).join("\n")}` : ""}`);
+    pub.push(`🆕 งานใหม่ (${sites})\n\n${g.map(fmt).join("\n\n")}${otherSites(g, k).length ? `\n\n${otherSites(g, k).join("\n")}` : ""}`);
     single++;
   }
 }
@@ -330,18 +360,18 @@ if (lowBatch.length && !flood) {
   let msg = `🆕 งานใหม่ค่าแรงต่ำกว่า $${CFG.batchBelowWage} รวม ${lowBatch.length} งาน`;
   for (const j of lowBatch) {
     const item = `\n\n${fmt(j)}`;
-    if ((msg + item).length > 4800) { outbox.push(msg); msg = "(ต่อ)"; }
+    if ((msg + item).length > 4800) { pub.push(msg); msg = "(ต่อ)"; }
     msg += item;
   }
-  outbox.push(msg);
+  pub.push(msg);
 } else if (lowBatch.length && flood) {
-  outbox.push(`🆕 งานใหม่ที่ไม่ใช่งานสำคัญอีก ${lowBatch.length} งาน (ไม่ส่งรายละเอียด ดูในเว็บ)`);
+  pub.push(`🆕 งานใหม่ที่ไม่ใช่งานสำคัญอีก ${lowBatch.length} งาน (ไม่ส่งรายละเอียด ดูในเว็บ)`);
 }
 
 // ที่ว่างหลุดกลับมา (งานที่เคยเต็มกลับมาเปิด เช่น มีคนถอนตัว)
 for (const j of reopened) {
   const rs = reasons(j);
-  outbox.push(`${rs.length ? "🚨♻️ ที่ว่างหลุดกลับมา" : "♻️ ที่ว่างกลับมาเปิดอีกครั้ง"}${rs.length ? ` (${rs.join(" + ")}) ♻️🚨` : ""}\n\n${fmt(j)}`);
+  pub.push(`${rs.length ? "🚨♻️ ที่ว่างหลุดกลับมา" : "♻️ ที่ว่างกลับมาเปิดอีกครั้ง"}${rs.length ? ` (${rs.join(" + ")}) ♻️🚨` : ""}\n\n${fmt(j)}`);
 }
 
 // ---------- สรุปรายวัน + เตือนวันสำคัญ (รันตอน 8 โมงเช้า) ----------
@@ -392,11 +422,20 @@ if (process.env.LINE_DAILY) {
     }
   }
   if (due.length) daily.push(`⏰ เตือนวันสำคัญ\n\n${due.join("\n")}`);
+  const q = await lineQuota();
+  if (q) daily.push(`📊 โควตาข้อความ LINE เดือนนี้: ใช้ไป ${q.used}${q.limit ? `/${q.limit}` : ""} ข้อความ`);
   outbox.push(...daily);
 }
 
+// เตือนถ้าโควตา LINE ใกล้หมด (ส่งถึงเพื่อนทุกคน กินโควตาเท่ากับจำนวนเพื่อน)
+if (pub.length) {
+  const q = await lineQuota();
+  if (q?.limit && q.used / q.limit >= 0.8 && !state.quotaWarn) { state.quotaWarn = true; outbox.push(`⚠️ โควตาข้อความ LINE เดือนนี้ใช้ไป ${q.used}/${q.limit} แล้ว ถ้าเต็มจะส่งถึงเพื่อนไม่ได้ ให้ลดจำนวนข้อความหรือเปลี่ยนแพ็กเกจ`); }
+  if (q?.limit && q.used / q.limit < 0.5) delete state.quotaWarn;
+}
 if (outbox.length) await pushMany(outbox);
-console.log(`ส่งแล้ว ${outbox.length} ข้อความ (งานใหม่ ${fresh.length}, ที่ว่างกลับมา ${reopened.length})`);
+if (pub.length) await broadcastMany(pub);
+console.log(`ส่งแล้ว ${outbox.length + pub.length} ข้อความ (งานใหม่ ${fresh.length}, ที่ว่างกลับมา ${reopened.length})`);
 
 mkdirSync(".job-watch", { recursive: true });
 writeFileSync(STATE, JSON.stringify(state));
