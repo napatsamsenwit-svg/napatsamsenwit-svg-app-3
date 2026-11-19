@@ -177,8 +177,30 @@ if (process.argv.includes("--fetch-acadex")) {
   process.exit(0);
 }
 
+// ---------- แจ้งเตือนเมื่อสคริปต์พังทั้งรอบ (เรียกจาก workflow ตอน failure) ----------
+if (process.argv.includes("--notify-crash")) {
+  const F = ".job-watch/crash.json";
+  const last = existsSync(F) ? JSON.parse(readFileSync(F, "utf8")).at ?? 0 : 0;
+  if (Date.now() - last > 6 * 3600e3) { // กันข้อความรัว: แจ้งไม่เกิน 6 ชั่วโมงละครั้ง
+    mkdirSync(".job-watch", { recursive: true });
+    writeFileSync(F, JSON.stringify({ at: Date.now() }));
+    await pushLine(`🛑 ระบบแจ้งเตือนงานทำงานผิดพลาด\nช่วงนี้อาจพลาดงานใหม่ ให้บอก Claude ให้เข้าไปแก้ทันที\n${process.env.RUN_URL ?? ""}`).catch(() => {});
+  }
+  process.exit(0);
+}
+
+// โพสต์ใหม่ของ iHappy (ขึ้นก่อนตารางงานหลายชั่วโมง) ใช้เป็นสัญญาณเตือนล่วงหน้า
+const decodeHtml = (t) => t.replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n))).replace(/&amp;/g, "&");
+async function ihappyPosts() {
+  const r = JSON.parse(await get("https://www.ihappyeducation.com/wp-json/wp/v2/posts?categories=33&per_page=40&orderby=date&_fields=id,link,title"));
+  if (!Array.isArray(r) || r.length < 5) throw new Error("อ่านโพสต์ iHappy ไม่ได้");
+  return r.map((p) => ({ id: p.id, link: p.link, title: decodeHtml(p.title?.rendered ?? "") }));
+}
+
 // ---------- ดึงข้อมูลทุกเว็บ ----------
+const postsPromise = ihappyPosts().catch((e) => { console.error("posts:", e.message); return null; });
 const results = await Promise.allSettled([acadex(), ihappy(), newstep()]);
+const posts = await postsPromise;
 const names = ["acadex", "ihappy", "newstep"];
 const okJobs = results.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
 
@@ -207,7 +229,7 @@ if (process.env.LINE_TEST) {
 const now = new Date().toISOString();
 let state = existsSync(STATE) ? JSON.parse(readFileSync(STATE, "utf8")) : {};
 if (!state.jobs) state = { jobs: {}, seeded: {}, blocked: state.blocked ?? {}, events: [], reminders: {} }; // ย้ายจากแบบเก่า: รอบนี้เก็บค่าเริ่มต้นเงียบ ๆ
-state.events ??= []; state.reminders ??= {}; state.blocked ??= {};
+state.events ??= []; state.reminders ??= {}; state.blocked ??= {}; state.failN ??= {}; state.posts ??= {};
 
 const fresh = [], reopened = [], alerts = [];
 results.forEach((res, i) => {
@@ -215,13 +237,14 @@ results.forEach((res, i) => {
   if (res.status === "rejected" || res.value.length < 20) {
     const why = String(res.reason?.message ?? res.reason ?? `เจอแค่ ${res.value.length} งาน`);
     console.error(`${name}: อ่านไม่สำเร็จหรือหน้าเว็บเปลี่ยน`, why);
-    process.exitCode = 1;
-    if (!state.blocked[name]) { // แจ้งแค่ครั้งแรกที่พัง กันข้อความรัว
+    state.failN[name] = (state.failN[name] ?? 0) + 1;
+    if (state.failN[name] >= 3 && !state.blocked[name]) { // พังติดกัน 3 รอบถึงแจ้ง (กันสัญญาณสะดุดชั่วคราว) และแจ้งครั้งเดียว
       state.blocked[name] = true;
       alerts.push(`⚠️ เช็กเว็บ ${name} ไม่ได้ (${why})${/40[13]|429/.test(why) ? "\nเว็บอาจบล็อกเราอยู่" : ""}`);
     }
     return;
   }
+  state.failN[name] = 0;
   if (state.blocked[name]) { delete state.blocked[name]; alerts.push(`✅ เว็บ ${name} กลับมาเช็กได้ปกติแล้ว`); }
   const first = !state.seeded[name];
   // แถวที่รหัสซ้ำกัน (ตำแหน่งเดียวกันลงหลายแถว) รวมเป็นงานเดียว ถือว่าเปิดถ้ามีแถวใดแถวหนึ่งเปิด กันป้ายเปิด/เต็มสลับไปมา
@@ -243,6 +266,36 @@ results.forEach((res, i) => {
   console.log(`${name}: ${res.value.length} งาน${first ? " (รอบแรก เก็บไว้เฉย ๆ ไม่แจ้งเตือน)" : ""}`);
 });
 state.events = state.events.slice(-200);
+
+// iHappy: โพสต์ใหม่ที่ยังไม่ขึ้นตาราง
+if (posts) {
+  const seedP = Object.keys(state.posts).length === 0;
+  const newP = posts.filter((p) => !state.posts[p.id]);
+  state.posts = Object.fromEntries(posts.map((p) => [p.id, 1]));
+  if (!seedP && newP.length) {
+    const byT = new Map();
+    for (const p of newP) byT.set(p.title, [...(byT.get(p.title) ?? []), p]);
+    const entries = [...byT];
+    for (const [title, ps] of entries.slice(0, 8)) {
+      const rs = reasons({ text: title.replace(/\//g, ", "), wageText: "" });
+      alerts.push(`${rs.length ? `🚨🚨 ด่วน! iHappy เพิ่งโพสต์ (${rs.join(" + ")}) 🚨🚨` : "📝 iHappy เพิ่งโพสต์งานใหม่"}\n(ตารางงานอาจยังไม่อัปเดต รอสักพัก)\n\n${title}${ps.length > 1 ? ` · ${ps.length} ตำแหน่ง` : ""}\n${ps[0].link}`);
+    }
+    if (entries.length > 8) alerts.push(`📝 iHappy โพสต์งานใหม่อีก ${entries.length - 8} รายการ ดูในเว็บ`);
+  }
+}
+
+// เช็กว่า Mac ยังส่งข้อมูล Acadex มาอยู่ไหม
+const ev = process.env.GH_EVENT;
+if (process.env.MAC_AT) state.macAt = Number(process.env.MAC_AT) * 1000;
+else if (ev === "push" || !state.macAt) state.macAt = Date.now();
+const macAge = Date.now() - state.macAt;
+if (macAge > 25 * 60e3 && !state.macStale && ev === "schedule") {
+  state.macStale = true;
+  alerts.push(`⚠️ Mac ไม่ได้ส่งข้อมูล Acadex มา ${Math.round(macAge / 60e3)} นาทีแล้ว (เครื่องอาจหลับหรือปิด)\nข้อมูล Acadex อาจเก่า และการตรวจ iHappy/New Step ช้าลงเป็นชั่วโมง ให้เปิดเครื่องไว้`);
+} else if (state.macStale && macAge < 15 * 60e3) {
+  delete state.macStale;
+  alerts.push("✅ Mac กลับมาส่งข้อมูลปกติแล้ว");
+}
 
 // ---------- แจ้งเตือนทันที ----------
 const outbox = [...alerts];

@@ -19,6 +19,10 @@ on:
         description: "ส่งสรุปงานน่าสนใจเข้า LINE"
         type: boolean
         default: false
+      mac_at:
+        description: "เวลา (วินาที) ที่ Mac ส่งสัญญาณ ใช้เช็กว่า Mac ยังทำงาน"
+        type: string
+        default: ""
 permissions:
   contents: write
 concurrency: job-watch
@@ -36,11 +40,21 @@ jobs:
           LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
           LINE_TEST: ${{ inputs.test && '1' || '' }}
           LINE_DIGEST: ${{ inputs.digest && '1' || '' }}
+          GH_EVENT: ${{ github.event_name }}
+          MAC_AT: ${{ inputs.mac_at }}
           LINE_DAILY: ${{ (inputs.daily || github.event.schedule == '0 1 * * *') && '1' || '' }}
+      - name: แจ้งเตือนเมื่อระบบพัง
+        if: failure()
+        run: node scripts/job-watch.mjs --notify-crash
+        env:
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       - name: บันทึกรายการที่เห็นแล้ว
         if: always()
         run: |
           git config user.name "job-watch"
           git config user.email "job-watch@users.noreply.github.com"
           git add .job-watch/seen.json
+          git add .job-watch/crash.json 2>/dev/null || true
           git diff --cached --quiet || (git commit -m "อัปเดตรายการงานที่เห็นแล้ว" && git pull --rebase && git push)
