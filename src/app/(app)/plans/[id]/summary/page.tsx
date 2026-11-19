@@ -3,10 +3,11 @@ import { notFound, redirect } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { PlanProgress } from "@/components/plan-progress";
 import { BrandLogo } from "@/components/brand-logo";
+import { ImportFiles } from "@/components/plan/import-files";
 import { ReportActions } from "@/components/plan/report-actions";
 import { SectionSummary } from "@/components/plan/section-summary";
 import { SECTIONS } from "@/lib/form-schema";
-import { normalizeSection } from "@/lib/form-logic";
+import { asRows, normalizeSection } from "@/lib/form-logic";
 import { fullJson, fullMd } from "@/lib/export-md";
 import { requireUser } from "@/lib/plan";
 import { asStatus, STATUS_TEXT } from "@/lib/plan-status";
@@ -85,6 +86,12 @@ export default async function SummaryPage({ params }: PageProps<"/plans/[id]/sum
           md={md}
           json={json}
           planId={id}
+        />
+
+        <ImportFiles
+          roles={asRows(items.find((i) => i.section.id === "roles")?.data.rows)}
+          kpis={asRows(items.find((i) => i.section.id === "kpis")?.data.rows)}
+          competency={asRows(items.find((i) => i.section.id === "competency")?.data.rows)}
         />
 
         <pre className="max-h-[480px] overflow-auto rounded-[10px] bg-muted p-6 text-sm leading-relaxed whitespace-pre-wrap">{md}</pre>
