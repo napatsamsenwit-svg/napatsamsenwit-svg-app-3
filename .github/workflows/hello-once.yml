@@ -1,0 +1,25 @@
+name: hello-once
+on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  hello:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          node -e '
+          const t = process.env.T, me = process.env.ME;
+          const H = { authorization: `Bearer ${t}` };
+          const r = await fetch("https://api.line.me/v2/bot/followers/ids", { headers: H });
+          if (!r.ok) { console.log("followers api status", r.status); process.exit(0); }
+          const ids = (await r.json()).userIds ?? [];
+          console.log("followers:", ids.length, "includes owner:", ids.includes(me));
+          const others = ids.filter((x) => x !== me);
+          if (ids.length !== 2 || others.length !== 1) { console.log("ไม่ส่ง: ไม่ใช่กรณีมีแค่เจ้าของกับอีก 1 คน"); process.exit(0); }
+          const s = await fetch("https://api.line.me/v2/bot/message/push", { method: "POST", headers: { ...H, "content-type": "application/json" },
+            body: JSON.stringify({ to: others[0], messages: [{ type: "text", text: "สวัสดีปาล์ม 👋 ผู้ช่วยของมาร์คเองนะ หวังว่าคุณจะสามารถหางานที่ดีที่สุดช่วยเขาได้ 🙏" }] }) });
+          console.log("send status", s.status);
+          ' --input-type=module
+        env:
+          T: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          ME: ${{ secrets.LINE_USER_ID }}
