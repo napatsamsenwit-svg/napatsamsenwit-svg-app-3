@@ -113,7 +113,12 @@ async function newstep() {
 
 // ---------- เกณฑ์ความสำคัญ ----------
 const maxWage = (t) => Math.max(0, ...[...t.replace(/\(\s*OT[^)]*\)/gi, "").matchAll(/\$\s*(\d+(?:\.\d+)?)/g)].map((m) => +m[1]).filter((n) => n <= 100));
-const WATCH = CFG.watch.map((w) => [new RegExp(w.pattern), w.label]);
+const WATCH = CFG.watch.map((w) => [new RegExp(w.pattern), w.label, w.note ?? ""]);
+// จุดเด่น/รีวิวของนายจ้างที่อยู่ในรายการเฝ้าพิเศษ (แนบท้ายข้อความแจ้งเตือน)
+const watchNotes = (text) => {
+  const t = text.toLowerCase().replace(/[‘’]/g, "'");
+  return [...new Set(WATCH.filter(([re, , n]) => n && re.test(t)).map(([, , n]) => n))];
+};
 
 function reasons(j) {
   const r = [];
@@ -185,7 +190,7 @@ async function lineQuota() {
   } catch { return null; }
 }
 
-const fmt = (j) => `[${j.site}] ${j.text}${j.seats ? ` · เหลือ ${j.seats} ที่` : ""}\n${j.link}`;
+const fmt = (j) => `[${j.site}] ${j.text}${j.seats ? ` · เหลือ ${j.seats} ที่` : ""}\n${j.link}${watchNotes(j.text).map((n) => `\n📝 รีวิว/จุดเด่น: ${n}`).join("")}`;
 
 // ---------- โหมดดึงข้อมูล Acadex บน Mac ----------
 if (process.argv.includes("--fetch-acadex")) {
@@ -234,6 +239,14 @@ const posts = await postsPromise;
 const names = ["acadex", "ihappy", "newstep"];
 const okJobs = results.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
 
+if (process.argv.includes("--list-watch")) { // ดูว่านายจ้างในรายการเฝ้าพิเศษตอนนี้มีเปิดหรือเต็มที่ไหนบ้าง
+  for (const w of CFG.watch) {
+    const re = new RegExp(w.pattern);
+    const m = okJobs.filter((j) => re.test(j.text.toLowerCase().replace(/[‘’]/g, "'")));
+    console.log(`${m.length ? "●" : "○"} ${w.label}${m.length ? ` → ${m.map((j) => `${j.site}:${j.open ? "เปิด" : "เต็ม"}`).join(" ")}` : ""}`);
+  }
+  process.exit(0);
+}
 if (process.env.LINE_DIGEST) {
   const part = (site) =>
     okJobs.filter((j) => j.site === site && j.open && isFav(j)).sort((a, b) => maxWage(b.wageText ?? "") - maxWage(a.wageText ?? "")).map((j) => `• ${j.text.replace("\n", " — ")}${j.seats ? ` · เหลือ ${j.seats} ที่` : ""}\n${j.link}`);
@@ -308,7 +321,7 @@ if (posts) {
     const entries = [...byT];
     for (const [title, ps] of entries.slice(0, 8)) {
       const rs = reasons({ text: title.replace(/\//g, ", "), wageText: "" });
-      pub.push(`${rs.length ? `🚨🚨 ด่วน! iHappy เพิ่งโพสต์ (${rs.join(" + ")}) 🚨🚨` : "📝 iHappy เพิ่งโพสต์งานใหม่"}\n(ตารางงานอาจยังไม่อัปเดต รอสักพัก)\n\n${title}${ps.length > 1 ? ` · ${ps.length} ตำแหน่ง` : ""}\n${ps[0].link}`);
+      pub.push(`${rs.length ? `🚨🚨 ด่วน! iHappy เพิ่งโพสต์ (${rs.join(" + ")}) 🚨🚨` : "📝 iHappy เพิ่งโพสต์งานใหม่"}\n(ตารางงานอาจยังไม่อัปเดต รอสักพัก)\n\n${title}${ps.length > 1 ? ` · ${ps.length} ตำแหน่ง` : ""}\n${ps[0].link}${watchNotes(title.replace(/\//g, ", ")).map((n) => `\n📝 รีวิว/จุดเด่น: ${n}`).join("")}`);
     }
     if (entries.length > 8) pub.push(`📝 iHappy โพสต์งานใหม่อีก ${entries.length - 8} รายการ ดูในเว็บ`);
   }

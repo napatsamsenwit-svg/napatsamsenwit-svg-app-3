@@ -1,30 +1,286 @@
 {
   "_อ่านก่อน": "ไฟล์นี้ใช้ปรับเกณฑ์แจ้งเตือน บอก Claude ให้แก้ให้ได้เลย ไม่ต้องแก้เอง",
-  "favStates": ["alaska"],
+  "favStates": [
+    "alaska"
+  ],
   "minWageAbove": 18,
   "batchBelowWage": 16,
   "maxIndividualAlerts": 40,
   "watch": [
-    { "pattern": "49th state brewing", "label": "49th State Brewing (Alaska $18)" },
-    { "pattern": "talkeetna alaskan lodge", "label": "Talkeetna Alaskan Lodge (Alaska)" },
-    { "pattern": "subway.*denali|denali.*subway", "label": "Subway Denali (Alaska)" },
-    { "pattern": "lemongrass.*fairbanks|fairbanks.*lemongrass", "label": "Lemongrass Thai Fairbanks (Alaska)" },
-    { "pattern": "aramark.*citi field|citi field", "label": "Aramark Citi Field (New York $21)" },
-    { "pattern": "ghirardelli", "label": "Ghirardelli Chocolate (San Francisco $19)" },
-    { "pattern": "rick's caf", "label": "Rick's Cafe Naples (Maine $19)" },
-    { "pattern": "alaska juneau", "label": "Alaska Juneau Mining Company (Alaska)" },
-    { "pattern": "seasalt", "label": "Seasalt (Seward, Alaska)" },
-    { "pattern": "fairfield inn.*anchorage|anchorage.*fairfield inn", "label": "Fairfield Inn Anchorage (Alaska)" },
-    { "pattern": "taco bell.*kalispell|kalispell.*taco bell", "label": "Taco Bell Kalispell (Montana $19)" },
-    { "pattern": "hard rock hotel.*atlantic city|atlantic city.*hard rock hotel", "label": "Hard Rock Hotel Atlantic City ($19)" }
+    {
+      "pattern": "49th state brewing",
+      "label": "49th State Brewing (Alaska $18)",
+      "note": "เคยมีรีวิวงาน Retail $14+ทิป และทำงานหลายแห่งในเมืองได้ (Healy)"
+    },
+    {
+      "pattern": "talkeetna alaskan lodge",
+      "label": "Talkeetna Alaskan Lodge (Alaska)"
+    },
+    {
+      "pattern": "subway.*denali|denali.*subway",
+      "label": "Subway Denali (Alaska)"
+    },
+    {
+      "pattern": "lemongrass.*fairbanks|fairbanks.*lemongrass",
+      "label": "Lemongrass Thai Fairbanks (Alaska)"
+    },
+    {
+      "pattern": "aramark.*citi field|citi field",
+      "label": "Aramark Citi Field (New York $21)"
+    },
+    {
+      "pattern": "ghirardelli",
+      "label": "Ghirardelli Chocolate (San Francisco $19)"
+    },
+    {
+      "pattern": "rick's caf",
+      "label": "Rick's Cafe Naples (Maine $19)"
+    },
+    {
+      "pattern": "alaska juneau",
+      "label": "Alaska Juneau Mining Company (Alaska)"
+    },
+    {
+      "pattern": "seasalt",
+      "label": "Seasalt (Seward, Alaska)"
+    },
+    {
+      "pattern": "fairfield inn.*anchorage|anchorage.*fairfield inn",
+      "label": "Fairfield Inn Anchorage (Alaska)"
+    },
+    {
+      "pattern": "taco bell.*kalispell|kalispell.*taco bell",
+      "label": "Taco Bell Kalispell (Montana $19)"
+    },
+    {
+      "pattern": "hard rock hotel.*atlantic city|atlantic city.*hard rock hotel",
+      "label": "Hard Rock Hotel Atlantic City ($19)"
+    },
+    {
+      "pattern": "lsg sky chefs",
+      "label": "LSG Sky Chefs (Anchorage, Alaska $17.50)",
+      "note": "ทำงาน 48–60 ชม./สัปดาห์ อาหารฟรี"
+    },
+    {
+      "pattern": "pangea",
+      "label": "Pangea's Pizza (Traverse City, Michigan $20)",
+      "note": "OT $30 ช่วงพีก 40–50 ชม. อาหารฟรี"
+    },
+    {
+      "pattern": "stern seafood",
+      "label": "Stern Seafood (Scarborough, Maine $18)",
+      "note": "OT $27 มีทิป บ้าน $125/สัปดาห์"
+    },
+    {
+      "pattern": "al'?s french fr",
+      "label": "Al's French Frys (Vermont $14+ทิป)",
+      "note": "บ้าน $50/สัปดาห์ มีรีวิวว่าทำงานเดียวก็ได้กำไร"
+    },
+    {
+      "pattern": "best western[\\s\\S]*rapid city",
+      "label": "Best Western Plus (Rapid City, South Dakota $15)",
+      "note": "มีรีวิวทำงาน 6 วัน/สัปดาห์ อาหารเช้าฟรี"
+    },
+    {
+      "pattern": "great alaska pizza",
+      "label": "Great Alaska Pizza (Fairbanks $15+ทิป)",
+      "note": "รีวิวทิปเฉลี่ย $20/วัน อาหารฟรี"
+    },
+    {
+      "pattern": "dairy queen[\\s\\S]*(glen|new hampshire)",
+      "label": "Dairy Queen Grill & Chill (Glen, New Hampshire $14.50)",
+      "note": "มี OT รีวิวหัวหน้างานดี"
+    },
+    {
+      "pattern": "taco bell[\\s\\S]*soldotna",
+      "label": "Taco Bell (Soldotna, Alaska $16)",
+      "note": "อาหารฟรี แต่ต้องเช็กชั่วโมงจริง"
+    },
+    {
+      "pattern": "red parka",
+      "label": "Red Parka Steakhouse (Glen, New Hampshire $18)",
+      "note": "อาหารฟรี งานครัวค่อนข้างหนัก"
+    },
+    {
+      "pattern": "pike'?s waterfront",
+      "label": "Pike's Waterfront Lodge (Fairbanks $15+ทิป)",
+      "note": "บ้านพนักงาน $125/สัปดาห์ แต่ OT น้อย"
+    },
+    {
+      "pattern": "wendy'?s[\\s\\S]*fairbanks",
+      "label": "Wendy's (Fairbanks $17.25)",
+      "note": "มีรีวิวเด็ก J1 ไทยทำงานหลายคน"
+    },
+    {
+      "pattern": "nobo",
+      "label": "NoBo Mrkt (Traverse City, Michigan $20)",
+      "note": "อาหารฟรี แต่เสี่ยงถูกลดชั่วโมง"
+    },
+    {
+      "pattern": "amical",
+      "label": "Amical (Traverse City, Michigan $16.50)",
+      "note": "อาหารฟรี เหมาะเป็นงานเสริม"
+    },
+    {
+      "pattern": "t-?shirt center",
+      "label": "T-Shirt Center (Lake Geneva, Wisconsin $11)",
+      "note": "ที่พักฟรี แต่ค่าแรงไม่สูง"
+    },
+    {
+      "pattern": "jellystone",
+      "label": "Jellystone Park (Warrens, Wisconsin $12+ทิป)",
+      "note": "บ้าน $64/สัปดาห์ ทำงาน 40 ชม. แต่ไม่มี OT"
+    },
+    {
+      "pattern": "sunset pool",
+      "label": "Sunset Pool Management (Herndon, Virginia $15.50)"
+    },
+    {
+      "pattern": "prospectors pizz",
+      "label": "Prospectors Pizzeria (Denali/Healy, Alaska)",
+      "note": "ประกาศเดิมมีบ้าน $91/สัปดาห์"
+    },
+    {
+      "pattern": "crow.?s nest",
+      "label": "Denali Crow's Nest Cabins (Alaska)",
+      "note": "นายจ้างจัดหาที่พักให้"
+    },
+    {
+      "pattern": "ephraim",
+      "label": "Ephraim's Restaurant (Garden City, Utah)",
+      "note": "เมืองตากอากาศ บ้าน $150/สัปดาห์"
+    },
+    {
+      "pattern": "alyeska",
+      "label": "Alyeska Resort (Girdwood, Alaska $19)",
+      "note": "ปีก่อนเป็นงานเดียวของ Alaska ที่ iHappy ให้เลทเกิน $18"
+    },
+    {
+      "pattern": "stop (and|&) shop",
+      "label": "Stop & Shop (Massachusetts $20, Nantucket/Edgartown)",
+      "note": "บ้าน $25/สัปดาห์ รีวิวปี 2025 เมเนเจอร์ใจดี งานไม่หนัก ทำงานเดียวก็คืนทุน มีรถบัสฟรีบนเกาะ แต่ไม่ใช่ฟีลเมืองใหญ่"
+    },
+    {
+      "pattern": "home depot[\\s\\S]*(alaska|utah)",
+      "label": "The Home Depot (Alaska/Utah $16–20)",
+      "note": "รีวิวเด็กไทยปี 2024–2025 งานมีระบบ ฝึกภาษาได้เยอะ (Sales/Cashier) ส่วน Lot Associate ใช้แรงมากกว่า"
+    },
+    {
+      "pattern": "safeway[\\s\\S]*alaska",
+      "label": "Safeway (Alaska: Seward/Juneau/Ketchikan $16)",
+      "note": "OT $24 บ้าน $70/สัปดาห์ (รีวิว Seward 2025) มีประวัติรับเด็กเวิร์กไทยหลายปี"
+    },
+    {
+      "pattern": "surf style",
+      "label": "Surf Style (Florida $15)",
+      "note": "32–38 ชม./สัปดาห์ งานไม่หนัก อยู่ในห้องแอร์ ล็อกกะทำงานสองได้ ไม่ถูกส่งกลับก่อนเวลา แต่อากาศร้อน"
+    },
+    {
+      "pattern": "jason aldean",
+      "label": "Jason Aldean's Retail Store (Gatlinburg, Tennessee $18)",
+      "note": "32 ชม./สัปดาห์ งานขายสบาย เด็ก J1 เยอะ สนุก แต่เมเนเจอร์จัดการไม่ค่อยดีและไม่มี OT"
+    },
+    {
+      "pattern": "food lion",
+      "label": "Food Lion (Avon, North Carolina $15)",
+      "note": "รีวิวปี 2025 Cashier เมเนเจอร์ใจดี ฝึกภาษากับคนอเมริกัน มี OT บ้าง"
+    },
+    {
+      "pattern": "harris teeter[\\s\\S]*delaware",
+      "label": "Harris Teeter (Delaware $15)",
+      "note": "ซูเปอร์มาร์เก็ตใหญ่ คล้าย Stop & Shop มีรีวิวผ่าน Higher ปี 2023 และ 2025 แต่ยังยืนยันชั่วโมงจริงไม่ได้"
+    },
+    {
+      "pattern": "anakeesta",
+      "label": "Anakeesta (Gatlinburg $14)",
+      "note": "OT $21 บ้าน $125/สัปดาห์ งานไม่หนัก แต่ตารางงานไม่คงที่"
+    },
+    {
+      "pattern": "ruby.?s inn",
+      "label": "Ruby's Inn General Store (Bryce, Utah $10)",
+      "note": "OT $15 ได้ OT เกิน 20 ชม./สัปดาห์ บ้าน $230/เดือน แต่เมืองเล็กมาก"
+    },
+    {
+      "pattern": "gorges",
+      "label": "Gorges Beach (Ocean City, New Jersey $13+ทิป)",
+      "note": "ร้านเสื้อผ้า/ของฝาก เจ้าของไว้ใจ ได้ทิปจากการคุยกับลูกค้า"
+    },
+    {
+      "pattern": "candymaker|candy maker",
+      "label": "CandyMaker (Destin, Florida $14+ทิป)",
+      "note": "รีวิวให้ 10/10 ได้ OT เยอะ 40–60 ชม. เพื่อนร่วมงานดี แต่ร้อน"
+    },
+    {
+      "pattern": "stadium[\\s\\S]*(bar harbor|maine)",
+      "label": "The Stadium (Bar Harbor, Maine $15)",
+      "note": "OT $22.50 ทิป ~$170–200/สัปดาห์ (ทำ 40 ชม.) รีวิวรุ่นพี่ธรรมศาสตร์ปี 2024"
+    },
+    {
+      "pattern": "ripley.?s[\\s\\S]*gatlinburg",
+      "label": "Ripley's (Gatlinburg $13+คอมมิชชัน)",
+      "note": "Ticket Seller ทำงานสองได้ 30–32 ชม. หัวหน้าดี มีคอมมิชชัน"
+    },
+    {
+      "pattern": "skycenter",
+      "label": "SkyCenter (Gatlinburg $13+คอมมิชชัน)",
+      "note": "ตารางยืดหยุ่น เมเนเจอร์ใจดี แต่ไม่มี OT (รีวิวปี 2021)"
+    },
+    {
+      "pattern": "baskin[\\s\\S]*gatlinburg",
+      "label": "Baskin-Robbins (Gatlinburg $14.50+ทิป)",
+      "note": "เหมาะเป็นงานเสริม งานหน้าร้าน พบลูกค้า"
+    },
+    {
+      "pattern": "dollywood",
+      "label": "Dollywood Merchandise (Pigeon Forge, Tennessee)",
+      "note": "รีวิวปี 2025 Supervisor ใจดี เด็ก J1 เยอะ ฝึกภาษาดี แต่ชั่วโมงไม่สูงสุด"
+    },
+    {
+      "pattern": "star market",
+      "label": "Star Market (Massachusetts, เช่น Hyannis)",
+      "note": "ซูเปอร์มาร์เก็ตในเมืองท่องเที่ยว"
+    },
+    {
+      "pattern": "acme markets?",
+      "label": "ACME Markets (New Jersey)",
+      "note": "ซูเปอร์มาร์เก็ต อยู่ในรายการเล็งของคุณ"
+    }
   ],
   "deadlines": [
-    { "date": "2026-11-20", "label": "โปรโมชันค่าสมัคร Acadex หมดวันนี้ (6,900 บาท)" },
-    { "date": "2026-11-27", "label": "โปรโมชันค่าสมัคร iHappy หมด (4,900 บาท)" },
-    { "date": "2026-12-05", "label": "(ถ้าสมัคร Acadex) ครบกำหนดจ่ายงวด 1: 10,000 บาท" },
-    { "date": "2026-12-25", "label": "(ถ้าสมัคร Acadex) ครบกำหนดจ่ายงวด 2: 15,000 บาท" },
-    { "date": "2027-01-05", "label": "(ถ้าสมัคร Acadex) ครบกำหนดจ่ายงวด 3: 33,900 บาท" },
-    { "date": "2027-01-25", "label": "(ถ้าสมัคร Acadex) ครบกำหนดจ่ายงวด 4" }
+    {
+      "date": "2026-11-20",
+      "label": "โปรโมชันค่าสมัคร Acadex หมดวันนี้ (6,900 บาท)"
+    },
+    {
+      "date": "2026-11-27",
+      "label": "โปรโมชันค่าสมัคร iHappy หมด (4,900 บาท)"
+    },
+    {
+      "date": "2026-12-05",
+      "label": "(ถ้าสมัคร Acadex) ครบกำหนดจ่ายงวด 1: 10,000 บาท"
+    },
+    {
+      "date": "2026-12-25",
+      "label": "(ถ้าสมัคร Acadex) ครบกำหนดจ่ายงวด 2: 15,000 บาท"
+    },
+    {
+      "date": "2027-01-05",
+      "label": "(ถ้าสมัคร Acadex) ครบกำหนดจ่ายงวด 3: 33,900 บาท"
+    },
+    {
+      "date": "2027-01-25",
+      "label": "(ถ้าสมัคร Acadex) ครบกำหนดจ่ายงวด 4"
+    }
   ],
-  "ihappyAvgCumulative": { "09": 11, "10": 128, "11": 224, "12": 276, "01": 323, "02": 369, "03": 404, "04": 417, "05": 426 }
+  "ihappyAvgCumulative": {
+    "09": 11,
+    "10": 128,
+    "11": 224,
+    "12": 276,
+    "01": 323,
+    "02": 369,
+    "03": 404,
+    "04": 417,
+    "05": 426
+  }
 }
