@@ -5,6 +5,7 @@ import { PlanProgress } from "@/components/plan-progress";
 import { BrandLogo } from "@/components/brand-logo";
 import { ImportFiles } from "@/components/plan/import-files";
 import { ReportActions } from "@/components/plan/report-actions";
+import { SectionPdfActions } from "@/components/plan/section-pdf-actions";
 import { SectionSummary } from "@/components/plan/section-summary";
 import { SECTIONS } from "@/lib/form-schema";
 import { asRows, normalizeSection } from "@/lib/form-logic";
@@ -93,6 +94,8 @@ export default async function SummaryPage({ params }: PageProps<"/plans/[id]/sum
           kpis={asRows(items.find((i) => i.section.id === "kpis")?.data.rows)}
           competency={asRows(items.find((i) => i.section.id === "competency")?.data.rows)}
         />
+
+        <SectionPdfActions items={items.map((i) => ({ id: i.section.id, data: i.data, status: i.status }))} company={company} />
 
         <pre className="max-h-[480px] overflow-auto rounded-[10px] bg-muted p-6 text-sm leading-relaxed whitespace-pre-wrap">{md}</pre>
       </section>
