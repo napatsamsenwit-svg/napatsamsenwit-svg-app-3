@@ -10,11 +10,12 @@
     {
       "pattern": "49th state brewing",
       "label": "49th State Brewing (Alaska $18)",
-      "note": "เคยมีรีวิวงาน Retail $14+ทิป และทำงานหลายแห่งในเมืองได้ (Healy)"
+      "note": "เคยมีรีวิวงาน Retail $14+ทิป และทำงานหลายแห่งในเมืองได้ (Healy) · $11.91+ทิป ถึง $18 บางตำแหน่งบ้าน $105/สัปดาห์"
     },
     {
       "pattern": "talkeetna alaskan lodge",
-      "label": "Talkeetna Alaskan Lodge (Alaska)"
+      "label": "Talkeetna Alaskan Lodge (Alaska)",
+      "note": "$13 บ้านฟรี"
     },
     {
       "pattern": "subway.*denali|denali.*subway",
@@ -89,7 +90,7 @@
     {
       "pattern": "dairy queen[\\s\\S]*(glen|new hampshire)",
       "label": "Dairy Queen Grill & Chill (Glen, New Hampshire $14.50)",
-      "note": "มี OT รีวิวหัวหน้างานดี"
+      "note": "มี OT รีวิวหัวหน้างานดี · Glen บ้าน $135/สัปดาห์ · North Conway $15+ทิป บ้าน $140/สัปดาห์"
     },
     {
       "pattern": "taco bell[\\s\\S]*soldotna",
@@ -163,7 +164,7 @@
     {
       "pattern": "home depot[\\s\\S]*(alaska|utah)",
       "label": "The Home Depot (Alaska/Utah $16–20)",
-      "note": "รีวิวเด็กไทยปี 2024–2025 งานมีระบบ ฝึกภาษาได้เยอะ (Sales/Cashier) ส่วน Lot Associate ใช้แรงมากกว่า"
+      "note": "รีวิวเด็กไทยปี 2024–2025 งานมีระบบ ฝึกภาษาได้เยอะ (Sales/Cashier) ส่วน Lot Associate ใช้แรงมากกว่า · Kenai $17–18 ต้องหาบ้านเอง"
     },
     {
       "pattern": "safeway[\\s\\S]*alaska",
@@ -233,7 +234,7 @@
     {
       "pattern": "dollywood",
       "label": "Dollywood Merchandise (Pigeon Forge, Tennessee)",
-      "note": "รีวิวปี 2025 Supervisor ใจดี เด็ก J1 เยอะ ฝึกภาษาดี แต่ชั่วโมงไม่สูงสุด"
+      "note": "รีวิวปี 2025 Supervisor ใจดี เด็ก J1 เยอะ ฝึกภาษาดี แต่ชั่วโมงไม่สูงสุด · $16.50 บ้าน $140/สัปดาห์ (อีกลิสต์)"
     },
     {
       "pattern": "star market",
@@ -244,6 +245,311 @@
       "pattern": "acme markets?",
       "label": "ACME Markets (New Jersey)",
       "note": "ซูเปอร์มาร์เก็ต อยู่ในรายการเล็งของคุณ"
+    },
+    {
+      "pattern": "great alaskan holidays",
+      "label": "Great Alaskan Holidays (Anchorage $21 รวมโบนัส)",
+      "note": "ทำความสะอาดรถบ้าน RV ไม่ใช่ห้องโรงแรม 40+ ชม./สัปดาห์ โบนัส $2/ชม. ถ้าทำครบสัญญา อยู่ในเมือง อากาศเย็น (รีวิว Summer 2026, New Step)"
+    },
+    {
+      "pattern": "olive 8",
+      "label": "Hyatt at Olive 8 (Seattle $20)",
+      "note": "บ้านประมาณ $650/เดือน เก็บห้องมาตรฐานสูง มีระบบเทรน ต้องทำงานเร็ว ได้ City Feel เต็มที่ (รีวิวปี 2025)"
+    },
+    {
+      "pattern": "edgewater[\\s\\S]*(laughlin|nevada)",
+      "label": "Edgewater Hotel & Casino (Laughlin, Nevada $18.80)",
+      "note": "เฉลี่ย $1,500+ ต่อรอบจ่าย มี OT บางช่วง หัวหน้าช่วยเหลือดี เคยถูกลดชั่วโมงก่อนกลับ แต่ร้อนจัด (รีวิวปี 2026, IEE)"
+    },
+    {
+      "pattern": "tropicana",
+      "label": "Tropicana Laughlin (Nevada $15)",
+      "note": "ที่พักฟรีในโรงแรมที่ทำงาน อาหารและเครื่องดื่มพนักงานฟรี รายได้งานหลัก ~ $7,320 ไม่รวมทิป/OT ประหยัดมาก แต่เหนื่อยและร้อน (Spring 2026, IEE)"
+    },
+    {
+      "pattern": "smugglers",
+      "label": "Smugglers' Notch Resort (Vermont $18)",
+      "note": "Room Attendant อยู่รัฐเหนือ เหมาะกับคนไม่ชอบร้อน ยังต้องเช็กค่าบ้านและชั่วโมงจริง (Summer 2025, Nextgen)"
+    },
+    {
+      "pattern": "la crema",
+      "label": "La Crema Tapas & Chocolate (Rosemary Beach, Florida $10+ทิป)",
+      "note": "บ้าน $135/สัปดาห์ Host ได้ 52–70 ชม. รวมรายได้ > $19,000 (Spring 2024) แต่ชั่วโมงสูงเพราะขาดคน ไม่การันตี"
+    },
+    {
+      "pattern": "osaka (japanese|hibachi)",
+      "label": "Osaka Japanese Hibachi (Florida Server $6.98+ทิป)",
+      "note": "ทิป Server ฝั่ง Hibachi ~ $120–150/วัน ก่อนแบ่งเชฟ 50% หมุน Runner/Host/Server ได้ (รีวิวปี 2022)"
+    },
+    {
+      "pattern": "waffle house[\\s\\S]*destin",
+      "label": "Waffle House (Destin, Florida $10.98+ทิป)",
+      "note": "เคยได้ทิป $200 จากโต๊ะเดียว แต่เป็นกรณีพิเศษ เหมาะกับคนภาษาอังกฤษดี (รีวิวปี 2026)"
+    },
+    {
+      "pattern": "cherrystone",
+      "label": "CherryStone (Bar Harbor, Maine $10+1.5% ยอดขาย)",
+      "note": "จัดจาน/เสิร์ฟ ผู้ร่วมงานดี เมืองนักท่องเที่ยวเยอะ แต่ต้องยกถาดและเดินบันได (ธรรมศาสตร์ปี 2024)"
+    },
+    {
+      "pattern": "surfing deer",
+      "label": "Surfing Deer (Seagrove Beach, Florida $14+ทิป)",
+      "note": "Wait Assistant/Busser เมเนเจอร์ใจดี กะ 16:00–22:00 เหมาะจับคู่กับงานหลักกะเช้า (รีวิวปี 2026)"
+    },
+    {
+      "pattern": "camp margaritaville",
+      "label": "Camp Margaritaville (Pigeon Forge, Tennessee $15)",
+      "note": "บ้าน $135/สัปดาห์ Food Runner ~32 ชม. งานไม่ยาก ส่วนลดอาหาร 40% OT น้อย เหมาะสายสังคม (รีวิวปี 2024, New Step)"
+    },
+    {
+      "pattern": "margaritaville resort[\\s\\S]*gatlinburg",
+      "label": "Margaritaville Resort (Gatlinburg, Tennessee Barista $12.50+ทิป)",
+      "note": "กะ 06:00–14:00 5 วัน/สัปดาห์ ทิปสูงสุดเคย $100 ชอบกว่า Server Assistant (รีวิวปี 2021)"
+    },
+    {
+      "pattern": "sunliner",
+      "label": "Sunliner Diner (Gulf Shores, Alabama $10+ทิป)",
+      "note": "3 เดือนไม่เคยต่ำกว่า 35 ชม./สัปดาห์ เมเนเจอร์ช่วยเหลือดี (Spring 2025)"
+    },
+    {
+      "pattern": "aquarius",
+      "label": "Aquarius Casino & Resort (Laughlin, Nevada $15.05–18.80)",
+      "note": "บ้านฟรี ได้ OT ทุกสัปดาห์ (รีวิวปี 2026, IEE)"
+    },
+    {
+      "pattern": "j resort",
+      "label": "J Resort (Reno, Nevada $15–16)",
+      "note": "บ้านฟรี อยู่ Downtown มีรถบัส อาหารฟรีขณะทำงาน แต่ OT น้อย (IEE)"
+    },
+    {
+      "pattern": "holiday inn[\\s\\S]*(independence|ohio)",
+      "label": "Holiday Inn (Independence, Ohio $15)",
+      "note": "บ้านฟรี อาหารฟรี เก็บห้อง ซักผ้า จัดเลี้ยง (รีวิวปี 2025)"
+    },
+    {
+      "pattern": "margaritaville[\\s\\S]*tahoe",
+      "label": "Margaritaville Resort Lake Tahoe (California $17.40–20.90+ทิป)",
+      "note": "งานโรงแรม เมืองท่องเที่ยว อากาศดี ยังไม่ยืนยันค่าบ้าน"
+    },
+    {
+      "pattern": "camp richardson",
+      "label": "Camp Richardson Resort (South Lake Tahoe $18+ทิป)",
+      "note": "Host ได้ส่วนแบ่งยอดขาย $300–400/รอบจ่าย แต่ทำงานแค่ 27–30 ชม./สัปดาห์ (IEE)"
+    },
+    {
+      "pattern": "foxwoods",
+      "label": "Foxwoods Resort Casino (Connecticut $16.16)",
+      "note": "ทำงาน 40 ชม. OT สองเท่า มีที่พักในโรงแรม (รีวิวปี 2024, IEE)"
+    },
+    {
+      "pattern": "mohegan",
+      "label": "Mohegan Sun (Uncasville, Connecticut $16.38)",
+      "note": "บ้าน $550/เดือน Barista มี OT บางตำแหน่งได้เกิน 40 ชม. (IEE)"
+    },
+    {
+      "pattern": "hawks cay",
+      "label": "Hawks Cay Resort (Duck Key, Florida $17.22)",
+      "note": "บ้าน $150/สัปดาห์ Cook ได้อาหารฟรี 3 มื้อ (Nextgen)"
+    },
+    {
+      "pattern": "the row[\\s\\S]*reno|reno[\\s\\S]*the row",
+      "label": "The ROW Reno (Nevada $16)",
+      "note": "Dishwasher ช่วงแรก 40–48 ชม. OT $24 อาหารราคาถูก (IEE)"
+    },
+    {
+      "pattern": "palace playland",
+      "label": "Palace Playland (Old Orchard Beach, Maine $17)",
+      "note": "Prize Counter สวนสนุกติดทะเล แต่บ้านค่อนข้างแพง"
+    },
+    {
+      "pattern": "big horn resort",
+      "label": "Big Horn Resort (Billings, Montana $13)",
+      "note": "บ้าน $325/เดือน Breakfast Attendant บ้านถูก แต่ชั่วโมงงานหลักแค่ ~30 ชม."
+    },
+    {
+      "pattern": "avid hotel",
+      "label": "Avid Hotel (Billings, Montana $16+ทิป)",
+      "note": "Housekeeping/Laundry มี OT เป็นงานสองของรุ่นพี่ปี 2024"
+    },
+    {
+      "pattern": "university of wisconsin",
+      "label": "University of Wisconsin–Madison ($15)",
+      "note": "บ้าน $600 ตลอดฤดูกาล"
+    },
+    {
+      "pattern": "seafarer",
+      "label": "Seafarer Suites (Homer, Alaska)",
+      "note": "บ้านฟรี ยังไม่ยืนยันค่าแรง (New Step)"
+    },
+    {
+      "pattern": "motel 6[\\s\\S]*coos bay",
+      "label": "Motel 6 (Coos Bay, Oregon)",
+      "note": "บ้านฟรี ยังไม่ยืนยันค่าแรง (New Step)"
+    },
+    {
+      "pattern": "rainbow village",
+      "label": "Denali Rainbow Village (Alaska)",
+      "note": "บ้านฟรี ยังไม่ยืนยันค่าแรง (New Step)"
+    },
+    {
+      "pattern": "westmark[\\s\\S]*fairbanks",
+      "label": "Westmark Hotel (Fairbanks, Alaska $16–16.78)",
+      "note": "บ้าน $130/สัปดาห์ รวมค่าน้ำไฟ"
+    },
+    {
+      "pattern": "glacier bay lodge",
+      "label": "Glacier Bay Lodge (Alaska $14–15)",
+      "note": "บ้าน $105/สัปดาห์ รวมอาหาร 3 มื้อ"
+    },
+    {
+      "pattern": "snow king",
+      "label": "Snow King Resort (Jackson, Wyoming $20)",
+      "note": "ยังไม่ยืนยันค่าบ้าน (IEE)"
+    },
+    {
+      "pattern": "clark'?s market",
+      "label": "Clark's Market (Crested Butte, Colorado $20)",
+      "note": "บ้าน $600/เดือน"
+    },
+    {
+      "pattern": "stanley hotel",
+      "label": "The Stanley Hotel (Estes Park, Colorado $19)",
+      "note": "บ้าน $650/เดือน"
+    },
+    {
+      "pattern": "island slice",
+      "label": "Island Slice Pizzeria (Mackinac Island, Michigan $18)",
+      "note": "บ้าน $85/สัปดาห์"
+    },
+    {
+      "pattern": "joann'?s fudge",
+      "label": "Joann's Fudge (Mackinac Island, Michigan $15+โบนัส $1)",
+      "note": "บ้าน $75/สัปดาห์"
+    },
+    {
+      "pattern": "luke'?s lobster",
+      "label": "Luke's Lobster (Seattle $21.30+ทิป)",
+      "note": "ต้องหาบ้านเอง"
+    },
+    {
+      "pattern": "yellow kittens",
+      "label": "Yellow Kittens (Block Island, Rhode Island $19)",
+      "note": "บ้าน $125/สัปดาห์"
+    },
+    {
+      "pattern": "doud'?s",
+      "label": "Doud's Market (Mackinac Island, Michigan $15)",
+      "note": "บ้าน $90/สัปดาห์"
+    },
+    {
+      "pattern": "mackinac house",
+      "label": "The Mackinac House (Mackinac Island, Michigan $13.73)",
+      "note": "บ้าน $150/สัปดาห์ รวมอาหาร 12 มื้อ"
+    },
+    {
+      "pattern": "dairy queen[\\s\\S]*(miles city|jamestown)",
+      "label": "Dairy Queen (Miles City, Montana / Jamestown, North Dakota)",
+      "note": "Miles City $15+ทิป บ้าน $250/เดือน · Jamestown $14 บ้าน $200/เดือน"
+    },
+    {
+      "pattern": "lands? end resort",
+      "label": "Land's End Resort (Homer, Alaska $17)",
+      "note": "บ้าน $500/เดือน"
+    },
+    {
+      "pattern": "roche harbor",
+      "label": "Roche Harbor Resort (Friday Harbor, Washington $20)",
+      "note": "บ้าน $100/สัปดาห์"
+    },
+    {
+      "pattern": "moose tracks",
+      "label": "Moose Tracks Retail Store (Grand Marais, Minnesota $17+ทิป)",
+      "note": "บ้าน $450/เดือน"
+    },
+    {
+      "pattern": "cookie bar",
+      "label": "The Cookie Bar (Chicago $17.05+ทิป)",
+      "note": "ต้องหาบ้านเอง"
+    },
+    {
+      "pattern": "smokin.? yard",
+      "label": "Smokin' Yard's BBQ (Idaho Springs, Colorado $19)",
+      "note": "ต้องยืนยันค่าบ้านรอบ Summer"
+    },
+    {
+      "pattern": "alaska seafood grill",
+      "label": "Alaska Seafood Grill (Seward, Alaska $14–16+ทิป)",
+      "note": "บ้าน $500/เดือน"
+    },
+    {
+      "pattern": "mcdonald'?s[\\s\\S]*(west lebanon|north conway|ellsworth|essex junction)",
+      "label": "McDonald's (West Lebanon NH $18 / North Conway NH $17.50 / Ellsworth ME $18 / Essex Junction VT $18)",
+      "note": "West Lebanon OT $27 · North Conway มีโอกาสหางานสอง"
+    },
+    {
+      "pattern": "spruce lodge",
+      "label": "Spruce Lodge (Seward, Alaska $18)",
+      "note": "บ้านฟรี"
+    },
+    {
+      "pattern": "wilderness resort",
+      "label": "Wilderness Resort (Wisconsin $16–17)",
+      "note": "บ้าน $75/สัปดาห์"
+    },
+    {
+      "pattern": "spruce peak",
+      "label": "The Lodge at Spruce Peak (Vermont $20)",
+      "note": "ยังไม่ยืนยันค่าบ้าน"
+    },
+    {
+      "pattern": "zudy",
+      "label": "Zudy's Cafe (Seward, Alaska $17+โบนัส)",
+      "note": "บ้าน $125/สัปดาห์"
+    },
+    {
+      "pattern": "river.?s edge",
+      "label": "River's Edge Resort (Fairbanks, Alaska $17)",
+      "note": "บ้าน $105/สัปดาห์"
+    },
+    {
+      "pattern": "river city casino",
+      "label": "River City Casino Hotel (St. Louis, Missouri)",
+      "note": "บ้านฟรี ห้องส่วนตัว ยังไม่ยืนยันค่าแรง"
+    },
+    {
+      "pattern": "home depot[\\s\\S]*kenai",
+      "label": "Home Depot (Kenai, Alaska $17–18)",
+      "note": "ต้องหาบ้านเอง"
+    },
+    {
+      "pattern": "lagoon",
+      "label": "Lagoon Amusement Park (Utah $14)",
+      "note": "บ้าน $125–135/สัปดาห์"
+    },
+    {
+      "pattern": "(econo lodge|rodeway)[\\s\\S]*rehoboth",
+      "label": "Econo Lodge / Rodeway Inn (Rehoboth Beach, Delaware $15+ทิป)",
+      "note": "บ้านฟรี"
+    },
+    {
+      "pattern": "copper river",
+      "label": "Copper River Princess Lodge (Alaska $17)",
+      "note": "บ้าน $119/สัปดาห์"
+    },
+    {
+      "pattern": "under armour",
+      "label": "Under Armour (North Conway, New Hampshire $17)",
+      "note": "เป็นงานสองจากรีวิว"
+    },
+    {
+      "pattern": "sea island",
+      "label": "Sea Island Resort (Georgia $7.25+ทิป)",
+      "note": "บ้าน $140/สัปดาห์ ห้องส่วนตัว"
+    },
+    {
+      "pattern": "signal mountain",
+      "label": "Signal Mountain Lodge (Wyoming $13.30)",
+      "note": "บ้านรวมอาหาร 3 มื้อ"
     }
   ],
   "deadlines": [
