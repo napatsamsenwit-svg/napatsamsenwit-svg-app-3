@@ -291,7 +291,7 @@ else if (ev === "push" || !state.macAt) state.macAt = Date.now();
 const macAge = Date.now() - state.macAt;
 if (macAge > 25 * 60e3 && !state.macStale && ev === "schedule") {
   state.macStale = true;
-  alerts.push(`⚠️ Mac ไม่ได้ส่งข้อมูล Acadex มา ${Math.round(macAge / 60e3)} นาทีแล้ว (เครื่องอาจหลับหรือปิด)\nข้อมูล Acadex อาจเก่า และการตรวจ iHappy/New Step ช้าลงเป็นชั่วโมง ให้เปิดเครื่องไว้`);
+  alerts.push(`⚠️ Mac ไม่ได้ส่งข้อมูล Acadex มา ${Math.round(macAge / 60e3)} นาทีแล้ว (เครื่องอาจหลับหรือปิด)\nAcadex หยุดอัปเดตจนกว่าจะเปิดเครื่อง (iHappy และ New Step ยังตรวจต่อตามปกติ)`);
 } else if (state.macStale && macAge < 15 * 60e3) {
   delete state.macStale;
   alerts.push("✅ Mac กลับมาส่งข้อมูลปกติแล้ว");
